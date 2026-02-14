@@ -1,4 +1,4 @@
-[build-system]
+§[build-system]
 requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
@@ -10,11 +10,28 @@ readme = "README.md"
 requires-python = ">=3.12"
 license = {text = "MIT"}
 authors = [{name = "IoT Simulator Contributors"}]
+keywords = ["iot", "simulator", "sensor", "data-generator", "industrial", "kafka", "delta-lake"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
 
 dependencies = [
     "pydantic>=2.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/taran13m/iot-simulator-python"
+Repository = "https://github.com/taran13m/iot-simulator-python"
+"Bug Tracker" = "https://github.com/taran13m/iot-simulator-python/issues"
 
 [project.optional-dependencies]
 kafka = ["aiokafka>=0.9"]
