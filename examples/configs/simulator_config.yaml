@@ -1,0 +1,60 @@
+# Sample IoT Data Simulator YAML configuration
+#
+# Demonstrates the config-driven approach: define industries, custom sensors,
+# and multiple sinks in a single file.
+#
+# Usage:
+#   python examples/scenarios/yaml_config_example.py
+#   iot-simulator run --config examples/configs/simulator_config.yaml --duration 15
+
+simulator:
+  industries: [mining, utilities]
+  update_rate_hz: 2.0
+  duration_s: 15
+  log_level: INFO
+
+# Define custom sensors alongside built-in industries
+custom_sensors:
+  industry: smart_office
+  sensors:
+    - name: room_temperature
+      sensor_type: temperature
+      unit: "°C"
+      min_value: 15.0
+      max_value: 35.0
+      nominal_value: 22.0
+      noise_std: 0.3
+      cyclic: true
+      cycle_period_seconds: 3600
+
+    - name: room_humidity
+      sensor_type: humidity
+      unit: "%RH"
+      min_value: 30.0
+      max_value: 70.0
+      nominal_value: 50.0
+      noise_std: 2.0
+
+    - name: room_co2
+      sensor_type: level
+      unit: "ppm"
+      min_value: 400.0
+      max_value: 2000.0
+      nominal_value: 600.0
+      noise_std: 15.0
+
+# Multiple sinks with independent throughput control
+sinks:
+  # Console -- human-readable output at a comfortable pace
+  - type: console
+    fmt: text
+    rate_hz: 0.5
+    batch_size: 30
+
+  # File -- CSV output with rotation
+  - type: file
+    path: ./output/yaml_config_output
+    format: csv
+    rotation: 30s
+    rate_hz: 1.0
+    batch_size: 500
