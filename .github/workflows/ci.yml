@@ -1,0 +1,28 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v1
+
+      - name: Install dependencies
+        run: |
+          uv venv .venv
+          uv pip install -r requirements.txt
+
+      - name: Install dev tools
+        run: uv pip install pytest pytest-cov pytest-asyncio ruff
+
+      - name: Lint with ruff
+        run: ruff check iot_simulator tests
+
+      - name: Run tests with coverage
+        run: pytest --cov=iot_simulator -q
+
+      - name: Check coverage threshold
+        run: pytest --cov=iot_simulator --cov-fail-under=90 -q

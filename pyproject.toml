@@ -1,0 +1,75 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "iot-data-simulator"
+version = "0.1.0"
+description = "Generate realistic industrial IoT sensor data and push to pluggable sinks."
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [{name = "IoT Simulator Contributors"}]
+
+dependencies = [
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+]
+
+[project.optional-dependencies]
+kafka = ["aiokafka>=0.9"]
+file = ["pyarrow>=14.0"]
+database = ["sqlalchemy[asyncio]>=2.0", "aiosqlite>=0.19"]
+webhook = ["httpx>=0.25"]
+delta = ["deltalake>=0.14", "pyarrow>=14.0"]
+cloud = ["azure-iot-device>=2.12", "boto3>=1.28"]
+zerobus = ["databricks-zerobus-ingest-sdk>=0.1", "databricks-sdk>=0.20"]
+dev = [
+    "pytest>=7.4",
+    "pytest-cov>=4.1",
+    "pytest-asyncio>=0.23",
+    "pytest-mock>=3.12",
+    "ruff>=0.4",
+    "mypy>=1.8",
+]
+all = [
+    "iot-data-simulator[kafka]",
+    "iot-data-simulator[file]",
+    "iot-data-simulator[database]",
+    "iot-data-simulator[webhook]",
+    "iot-data-simulator[delta]",
+    "iot-data-simulator[cloud]",
+    "iot-data-simulator[zerobus]",
+]
+
+[project.scripts]
+iot-simulator = "iot_simulator.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["iot_simulator*"]
+
+[tool.black]
+line-length = 120
+target-version = ["py312"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["iot_simulator"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+addopts = "-q --tb=short"
