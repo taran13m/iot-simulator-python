@@ -63,6 +63,20 @@ def _make_mock_deltalake_pyarrow():
     )
 
 
+def _import_delta_sink(mock_modules):
+    """Force re-import of delta module with mocks in place.
+
+    Must be called inside an active ``patch.dict(sys.modules, mock_modules)``
+    context so the mocks remain available when write() later calls
+    ``_get_arrow_schema()`` (which does ``import pyarrow as pa``).
+    """
+    if "iot_simulator.sinks.delta" in sys.modules:
+        del sys.modules["iot_simulator.sinks.delta"]
+    from iot_simulator.sinks.delta import DeltaSink
+
+    return DeltaSink
+
+
 # -----------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------
@@ -71,76 +85,68 @@ def _make_mock_deltalake_pyarrow():
 class TestDeltaSink:
     """DeltaSink with mocked deltalake."""
 
-    def _import_delta_sink(self, mock_modules):
-        with patch.dict(sys.modules, mock_modules):
-            if "iot_simulator.sinks.delta" in sys.modules:
-                del sys.modules["iot_simulator.sinks.delta"]
-            from iot_simulator.sinks.delta import DeltaSink
-
-            return DeltaSink
-
     @pytest.mark.asyncio
     async def test_connect_logs_ready(self) -> None:
         mock_modules, _, _ = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
-
-        sink = DeltaSink(table_path="/tmp/test_delta")
-        await sink.connect()  # Should not raise
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            sink = DeltaSink(table_path="/tmp/test_delta")
+            await sink.connect()  # Should not raise
 
     @pytest.mark.asyncio
     async def test_write_calls_write_deltalake(self) -> None:
         mock_modules, mock_write, mock_pa = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            sink = DeltaSink(table_path="/tmp/test_delta", mode="append")
+            await sink.connect()
+            await sink.write(_make_records(3))
 
-        sink = DeltaSink(table_path="/tmp/test_delta", mode="append")
-        await sink.connect()
-        await sink.write(_make_records(3))
-
-        mock_pa.Table.from_pylist.assert_called_once()
-        mock_write.assert_called_once()
+            mock_pa.Table.from_pylist.assert_called_once()
+            mock_write.assert_called_once()
 
     @pytest.mark.asyncio
     async def test_write_with_partition_by(self) -> None:
         mock_modules, mock_write, _ = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            sink = DeltaSink(
+                table_path="/tmp/test_delta",
+                partition_by=["industry"],
+            )
+            await sink.connect()
+            await sink.write(_make_records(2))
 
-        sink = DeltaSink(
-            table_path="/tmp/test_delta",
-            partition_by=["industry"],
-        )
-        await sink.connect()
-        await sink.write(_make_records(2))
-
-        call_kwargs = mock_write.call_args[1]
-        assert call_kwargs["partition_by"] == ["industry"]
+            call_kwargs = mock_write.call_args[1]
+            assert call_kwargs["partition_by"] == ["industry"]
 
     @pytest.mark.asyncio
     async def test_write_with_storage_options(self) -> None:
         mock_modules, mock_write, _ = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            opts = {"AWS_ACCESS_KEY_ID": "xxx"}
+            sink = DeltaSink(table_path="/tmp/test_delta", storage_options=opts)
+            await sink.connect()
+            await sink.write(_make_records(1))
 
-        opts = {"AWS_ACCESS_KEY_ID": "xxx"}
-        sink = DeltaSink(table_path="/tmp/test_delta", storage_options=opts)
-        await sink.connect()
-        await sink.write(_make_records(1))
-
-        call_kwargs = mock_write.call_args[1]
-        assert call_kwargs["storage_options"] == opts
+            call_kwargs = mock_write.call_args[1]
+            assert call_kwargs["storage_options"] == opts
 
     @pytest.mark.asyncio
     async def test_flush_is_noop(self) -> None:
         mock_modules, _, _ = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
-
-        sink = DeltaSink(table_path="/tmp/test_delta")
-        await sink.connect()
-        await sink.flush()
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            sink = DeltaSink(table_path="/tmp/test_delta")
+            await sink.connect()
+            await sink.flush()
 
     @pytest.mark.asyncio
     async def test_close(self) -> None:
         mock_modules, _, _ = _make_mock_deltalake_pyarrow()
-        DeltaSink = self._import_delta_sink(mock_modules)
-
-        sink = DeltaSink(table_path="/tmp/test_delta")
-        await sink.connect()
-        await sink.close()
+        with patch.dict(sys.modules, mock_modules):
+            DeltaSink = _import_delta_sink(mock_modules)
+            sink = DeltaSink(table_path="/tmp/test_delta")
+            await sink.connect()
+            await sink.close()
