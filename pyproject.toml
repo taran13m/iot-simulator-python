@@ -8,13 +8,12 @@ version = "0.1.0"
 description = "Generate realistic industrial IoT sensor data and push to pluggable sinks."
 readme = "README.md"
 requires-python = ">=3.12"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "IoT Simulator Contributors"}]
 keywords = ["iot", "simulator", "sensor", "data-generator", "industrial", "kafka", "delta-lake"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",

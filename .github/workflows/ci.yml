@@ -19,16 +19,16 @@ jobs:
         run: uv pip install pytest pytest-cov pytest-asyncio ruff build twine
 
       - name: Lint with ruff
-        run: ruff check iot_simulator tests
+        run: uv run ruff check iot_simulator tests
 
       - name: Run tests with coverage
-        run: pytest --cov=iot_simulator -q
+        run: uv run pytest --cov=iot_simulator -q
 
       - name: Check coverage threshold
-        run: pytest --cov=iot_simulator --cov-fail-under=90 -q
+        run: uv run pytest --cov=iot_simulator --cov-fail-under=90 -q
 
       - name: Build package (dry run)
-        run: python -m build
+        run: uv run python -m build
 
       - name: Verify package metadata
-        run: twine check dist/*
+        run: uv run twine check dist/*
