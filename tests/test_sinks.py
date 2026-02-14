@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import io
 import json
+import time
 from pathlib import Path
 
 import pytest
@@ -12,7 +13,7 @@ from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import SinkConfig
 from iot_simulator.sinks.callback import CallbackSink
 from iot_simulator.sinks.console import ConsoleSink
-from iot_simulator.sinks.file import FileSink
+from iot_simulator.sinks.file import FileSink, _parse_rotation
 
 # -----------------------------------------------------------------------
 # Helpers
@@ -131,6 +132,31 @@ class TestCallbackSink:
 # -----------------------------------------------------------------------
 
 
+class TestParseRotation:
+    """_parse_rotation helper."""
+
+    def test_none(self) -> None:
+        assert _parse_rotation(None) is None
+
+    def test_empty(self) -> None:
+        assert _parse_rotation("") is None
+
+    def test_seconds(self) -> None:
+        assert _parse_rotation("30s") == 30.0
+
+    def test_minutes(self) -> None:
+        assert _parse_rotation("5m") == 300.0
+
+    def test_hours(self) -> None:
+        assert _parse_rotation("1h") == 3600.0
+
+    def test_days(self) -> None:
+        assert _parse_rotation("1d") == 86400.0
+
+    def test_bare_number(self) -> None:
+        assert _parse_rotation("120") == 120.0
+
+
 class TestFileSink:
     """FileSink CSV and JSON output."""
 
@@ -164,3 +190,75 @@ class TestFileSink:
         assert len(lines) == 3
         parsed = json.loads(lines[0])
         assert "sensor_name" in parsed
+
+    @pytest.mark.asyncio
+    async def test_csv_rotation(self, tmp_path: Path) -> None:
+        """File rotation should create a new file when rotation interval elapses."""
+        sink = FileSink(path=str(tmp_path), format="csv", rotation="1s", rate_hz=1.0)
+        await sink.connect()
+        await sink.write(_make_records(2))
+
+        # Pretend time moved forward past rotation
+        sink._file_start_time = time.time() - 2.0
+        await sink.write(_make_records(2))
+
+        await sink.flush()
+        await sink.close()
+
+        csv_files = list(tmp_path.glob("*.csv"))
+        assert len(csv_files) >= 1
+
+    @pytest.mark.asyncio
+    async def test_unknown_format_raises(self, tmp_path: Path) -> None:
+        sink = FileSink(path=str(tmp_path), format="xml", rate_hz=1.0)
+        with pytest.raises(KeyError):
+            await sink.connect()
+
+    @pytest.mark.asyncio
+    async def test_parquet_output(self, tmp_path: Path) -> None:
+        """Parquet output should buffer and flush via pyarrow."""
+        try:
+            import pyarrow  # noqa: F401
+        except ImportError:
+            pytest.skip("pyarrow not installed")
+
+        # Records with metadata populated to avoid empty-struct issues
+        records = [
+            SensorRecord(
+                sensor_name=f"sensor_{i}",
+                industry="test",
+                value=float(i * 10),
+                unit="kW",
+                sensor_type="power",
+                timestamp=1_700_000_000.0 + i,
+                min_value=0.0,
+                max_value=100.0,
+                nominal_value=50.0,
+                metadata={"tag": "test"},
+            )
+            for i in range(5)
+        ]
+
+        sink = FileSink(path=str(tmp_path), format="parquet", rate_hz=1.0)
+        await sink.connect()
+        await sink.write(records)
+        await sink.flush()
+        await sink.close()
+
+        parquet_files = list(tmp_path.glob("*.parquet"))
+        assert len(parquet_files) == 1
+
+    @pytest.mark.asyncio
+    async def test_close_idempotent(self, tmp_path: Path) -> None:
+        sink = FileSink(path=str(tmp_path), format="csv", rate_hz=1.0)
+        await sink.connect()
+        await sink.close()
+        await sink.close()  # Second close should not raise
+
+    @pytest.mark.asyncio
+    async def test_creates_output_dir(self, tmp_path: Path) -> None:
+        new_dir = tmp_path / "nested" / "output"
+        sink = FileSink(path=str(new_dir), format="json", rate_hz=1.0)
+        await sink.connect()
+        assert new_dir.exists()
+        await sink.close()

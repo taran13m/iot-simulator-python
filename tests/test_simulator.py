@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import io
+from pathlib import Path
+
 import pytest
 
 from iot_simulator.models import SensorRecord
@@ -113,3 +116,64 @@ class TestSimulatorRun:
         sim = Simulator(industries=["mining"])
         sim.run(duration_s=0.1)
         assert "No sinks registered" in caplog.text
+
+    def test_run_with_multiple_sinks(self) -> None:
+        received_1: list[list[SensorRecord]] = []
+        received_2: list[list[SensorRecord]] = []
+
+        sim = Simulator(industries=["mining"], update_rate_hz=10.0)
+        sim.add_sink(CallbackSink(lambda recs: received_1.append(recs), rate_hz=5.0))
+        sim.add_sink(CallbackSink(lambda recs: received_2.append(recs), rate_hz=5.0))
+        sim.run(duration_s=0.5)
+
+        assert len(received_1) > 0
+        assert len(received_2) > 0
+
+
+# -----------------------------------------------------------------------
+# Sink throughput overrides
+# -----------------------------------------------------------------------
+
+
+class TestSinkOverrides:
+    """Override rate_hz and batch_size via add_sink."""
+
+    def test_override_rate_on_sink(self) -> None:
+        buf = io.StringIO()
+        sink = ConsoleSink(fmt="text", stream=buf, rate_hz=1.0)
+        sim = Simulator(industries=["mining"])
+        sim.add_sink(sink, rate_hz=5.0)
+        assert sim._runners[0].cfg.rate_hz == 5.0
+
+    def test_override_batch_size_on_sink(self) -> None:
+        buf = io.StringIO()
+        sink = ConsoleSink(fmt="text", stream=buf, rate_hz=1.0)
+        sim = Simulator(industries=["mining"])
+        sim.add_sink(sink, batch_size=50)
+        assert sim._runners[0].cfg.batch_size == 50
+
+    def test_callable_with_rate_and_batch(self) -> None:
+        sim = Simulator(industries=["mining"])
+        sim.add_sink(lambda recs: None, rate_hz=2.0, batch_size=25)
+        assert sim._runners[0].cfg.rate_hz == 2.0
+        assert sim._runners[0].cfg.batch_size == 25
+
+
+# -----------------------------------------------------------------------
+# from_csv
+# -----------------------------------------------------------------------
+
+
+class TestSimulatorFromCSV:
+    """Simulator.from_csv class method."""
+
+    def test_from_csv(self, tmp_path: Path) -> None:
+        csv_content = "name,sensor_type,unit,min_value,max_value,nominal_value\n"
+        csv_content += "temp_1,temperature,C,0,100,50\n"
+        csv_content += "press_1,pressure,bar,0,10,5\n"
+
+        csv_file = tmp_path / "sensors.csv"
+        csv_file.write_text(csv_content)
+
+        sim = Simulator.from_csv(str(csv_file), industry="test_lab")
+        assert sim.sensor_count == 2
