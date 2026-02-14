@@ -54,16 +54,16 @@ jobs:
         run: uv pip install pytest pytest-cov pytest-asyncio ruff build twine
 
       - name: Lint with ruff
-        run: ruff check iot_simulator tests
+        run: uv run ruff check iot_simulator tests
 
       - name: Run tests with coverage
-        run: pytest --cov=iot_simulator --cov-fail-under=90 -q
+        run: uv run pytest --cov=iot_simulator --cov-fail-under=90 -q
 
       - name: Build sdist and wheel
-        run: python -m build
+        run: uv run python -m build
 
       - name: Verify distributions
-        run: twine check dist/*
+        run: uv run twine check dist/*
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
