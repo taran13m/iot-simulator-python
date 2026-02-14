@@ -1,4 +1,4 @@
-"""Tests for built-in sinks – ConsoleSink, CallbackSink, FileSink."""
+"""Tests for built-in sinks - ConsoleSink, CallbackSink, FileSink."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from iot_simulator.sinks.base import SinkConfig
 from iot_simulator.sinks.callback import CallbackSink
 from iot_simulator.sinks.console import ConsoleSink
 from iot_simulator.sinks.file import FileSink
-
 
 # -----------------------------------------------------------------------
 # Helpers

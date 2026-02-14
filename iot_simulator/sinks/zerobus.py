@@ -1,4 +1,4 @@
-"""Zerobus Ingest sink – streams sensor records to Databricks via Zerobus.
+"""Zerobus Ingest sink - streams sensor records to Databricks via Zerobus.
 
 Requires the ``zerobus`` extra::
 
@@ -30,8 +30,8 @@ __all__ = ["ZerobusSink"]
 logger = logging.getLogger("iot_simulator.sinks.zerobus")
 
 try:
-    from zerobus.sdk.sync import ZerobusSdk
     from zerobus.sdk.shared import RecordType, StreamConfigurationOptions, TableProperties
+    from zerobus.sdk.sync import ZerobusSdk
 
     ZEROBUS_AVAILABLE = True
 except ImportError:
@@ -64,11 +64,11 @@ def _resolve_credentials(
     """
     try:
         from databricks.sdk.config import Config
-    except ImportError:
+    except ImportError as err:
         raise ImportError(
             "databricks-sdk is required for credential resolution.  "
             "Install with: pip install iot-data-simulator[zerobus]"
-        )
+        ) from err
 
     cfg_kwargs: dict[str, Any] = {}
     if workspace_url:
@@ -169,9 +169,7 @@ class ZerobusSink(Sink):
         _type_map = {"json": RecordType.JSON, "proto": RecordType.PROTO}
         rt = record_type.lower().strip()
         if rt not in _type_map:
-            raise ValueError(
-                f"Invalid record_type '{record_type}'. Must be 'json' or 'proto'."
-            )
+            raise ValueError(f"Invalid record_type '{record_type}'. Must be 'json' or 'proto'.")
         self._record_type: RecordType = _type_map[rt]
 
         self._sdk: ZerobusSdk | None = None
@@ -198,14 +196,18 @@ class ZerobusSink(Sink):
             table_props = TableProperties(self._table_name)
             options = StreamConfigurationOptions(record_type=self._record_type)
             stream = sdk.create_stream(
-                resolved_id, resolved_secret, table_props, options,
+                resolved_id,
+                resolved_secret,
+                table_props,
+                options,
             )
             return sdk, stream
 
         self._sdk, self._stream = await loop.run_in_executor(None, _create_stream)
         logger.info(
-            "ZerobusSink connected – endpoint=%s table=%s",
-            self._server_endpoint, self._table_name,
+            "ZerobusSink connected - endpoint=%s table=%s",
+            self._server_endpoint,
+            self._table_name,
         )
 
     async def write(self, records: list[SensorRecord]) -> None:
@@ -227,11 +229,13 @@ class ZerobusSink(Sink):
 
         await loop.run_in_executor(None, _ingest_batch)
         logger.debug(
-            "Ingested %d records to Zerobus table %s", len(records), self._table_name,
+            "Ingested %d records to Zerobus table %s",
+            len(records),
+            self._table_name,
         )
 
     async def flush(self) -> None:
-        """No-op – each write() waits for acknowledgments."""
+        """No-op - each write() waits for acknowledgments."""
 
     async def close(self) -> None:
         """Close the Zerobus ingest stream."""

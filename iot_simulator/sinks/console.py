@@ -1,4 +1,4 @@
-"""Console sink – prints sensor records to stdout.
+"""Console sink - prints sensor records to stdout.
 
 Useful for debugging, demos, and verifying the pipeline is working.
 """
@@ -18,10 +18,10 @@ class ConsoleSink(Sink):
     """Writes sensor records to the console (stdout by default).
 
     Parameters:
-        fmt: Output format – ``"text"`` (human-readable) or ``"json"``
+        fmt: Output format - ``"text"`` (human-readable) or ``"json"``
              (one JSON object per record).
         stream: Writable file-like object (defaults to ``sys.stdout``).
-        rate_hz: Throughput – how often to flush batches.
+        rate_hz: Throughput - how often to flush batches.
         **kwargs: Forwarded to :class:`Sink`.
     """
 
@@ -39,7 +39,7 @@ class ConsoleSink(Sink):
         self._stream = stream or sys.stdout
 
     async def connect(self) -> None:
-        """No-op – stdout is always available."""
+        """No-op - stdout is always available."""
 
     async def write(self, records: list[SensorRecord]) -> None:
         if self._fmt == "json":
@@ -59,4 +59,4 @@ class ConsoleSink(Sink):
         self._stream.flush()
 
     async def close(self) -> None:
-        """No-op – we do not own stdout."""
+        """No-op - we do not own stdout."""

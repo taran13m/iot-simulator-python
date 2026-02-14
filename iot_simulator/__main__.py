@@ -116,6 +116,7 @@ sinks:
 # Main entry point
 # ======================================================================
 
+
 def main(argv: list[str] | None = None) -> None:
     epilog = textwrap.dedent("""\
         examples:
@@ -151,48 +152,73 @@ def main(argv: list[str] | None = None) -> None:
         """),
     )
     run_parser.add_argument(
-        "--config", "-c", type=str, default=None,
+        "--config",
+        "-c",
+        type=str,
+        default=None,
         help="Path to YAML config file. When set, --sink/--output-* flags are ignored.",
     )
     run_parser.add_argument(
-        "--industries", "-i", nargs="*", default=None,
+        "--industries",
+        "-i",
+        nargs="*",
+        default=None,
         help="Built-in industry names (e.g. mining utilities). Default: mining.",
     )
     run_parser.add_argument(
-        "--rate", type=float, default=2.0,
+        "--rate",
+        type=float,
+        default=2.0,
         help="Generator tick rate in Hz (default: 2.0).",
     )
     run_parser.add_argument(
-        "--duration", "-d", type=float, default=None,
+        "--duration",
+        "-d",
+        type=float,
+        default=None,
         help="Run duration in seconds (default: indefinite, Ctrl-C to stop).",
     )
     run_parser.add_argument(
-        "--log-level", type=str, default="INFO",
+        "--log-level",
+        type=str,
+        default="INFO",
         choices=["DEBUG", "INFO", "WARNING", "ERROR"],
         help="Logging level (default: INFO).",
     )
     # Sink selection (without --config)
     run_parser.add_argument(
-        "--sink", "-s", action="append", dest="sinks",
+        "--sink",
+        "-s",
+        action="append",
+        dest="sinks",
         choices=["console", "file"],
         help="Sink(s) to enable (repeatable). Default: console. Example: -s console -s file",
     )
     run_parser.add_argument(
-        "--format", type=str, default="text",
+        "--format",
+        type=str,
+        default="text",
         choices=["text", "json"],
         help="Console sink output format (default: text).",
     )
     run_parser.add_argument(
-        "--output-dir", "-o", type=str, default="./output",
+        "--output-dir",
+        "-o",
+        type=str,
+        default="./output",
         help="Output directory for the file sink (default: ./output).",
     )
     run_parser.add_argument(
-        "--output-format", type=str, default="csv",
+        "--output-format",
+        type=str,
+        default="csv",
         choices=["csv", "json", "parquet"],
         help="File sink format (default: csv).",
     )
     run_parser.add_argument(
-        "--rotation", type=str, default=None,
+        "--rotation",
+        type=str,
+        default=None,
         help="File rotation interval, e.g. 1h, 30m, 60s (default: none).",
     )
 
@@ -214,7 +240,8 @@ def main(argv: list[str] | None = None) -> None:
         help="List all sensors for a given industry.",
     )
     sensors_parser.add_argument(
-        "industry", type=str,
+        "industry",
+        type=str,
         help="Industry name (run 'list-industries' to see available names).",
     )
 
@@ -224,7 +251,10 @@ def main(argv: list[str] | None = None) -> None:
         help="Generate a sample YAML configuration file.",
     )
     init_parser.add_argument(
-        "--output", "-o", type=str, default=None,
+        "--output",
+        "-o",
+        type=str,
+        default=None,
         help="Write config to this file instead of stdout.",
     )
 
@@ -235,7 +265,7 @@ def main(argv: list[str] | None = None) -> None:
     _known_commands = {"run", "list-industries", "list-sinks", "list-sensors", "init-config"}
     raw_args = argv if argv is not None else sys.argv[1:]
     if raw_args and raw_args[0] not in _known_commands and raw_args[0] not in ("-h", "--help"):
-        raw_args = ["run"] + list(raw_args)
+        raw_args = ["run", *list(raw_args)]
 
     args = parser.parse_args(raw_args)
 
@@ -261,6 +291,7 @@ def main(argv: list[str] | None = None) -> None:
 # ======================================================================
 # Command implementations
 # ======================================================================
+
 
 def _cmd_run(args: argparse.Namespace) -> None:
     """Execute the simulator."""
@@ -304,6 +335,7 @@ def _run_from_config(config_path: str, duration_override: float | None) -> None:
 
     if not cfg.sink_configs:
         from iot_simulator.sinks.console import ConsoleSink
+
         sim.add_sink(ConsoleSink(rate_hz=1.0))
     else:
         for sink_dict in cfg.sink_configs:
@@ -331,27 +363,33 @@ def _run_quick(
 
     if "console" in enabled_sinks:
         from iot_simulator.sinks.console import ConsoleSink
+
         sim.add_sink(ConsoleSink(fmt=console_fmt, rate_hz=1.0))
 
     if "file" in enabled_sinks:
         from iot_simulator.sinks.file import FileSink
-        sim.add_sink(FileSink(
-            path=output_dir,
-            format=output_format,
-            rotation=rotation,
-            rate_hz=1.0,
-            batch_size=500,
-        ))
+
+        sim.add_sink(
+            FileSink(
+                path=output_dir,
+                format=output_format,
+                rotation=rotation,
+                rate_hz=1.0,
+                batch_size=500,
+            )
+        )
 
     if not sim._runners:
         # Fallback if somehow no sinks matched
         from iot_simulator.sinks.console import ConsoleSink
+
         sim.add_sink(ConsoleSink(fmt=console_fmt, rate_hz=1.0))
 
     sim.run(duration_s=duration)
 
 
 # -- list-industries -------------------------------------------------------
+
 
 def _cmd_list_industries() -> None:
     from iot_simulator.sensor_models import IndustryType, get_industry_sensors
@@ -371,22 +409,21 @@ def _cmd_list_industries() -> None:
 
 # -- list-sinks ------------------------------------------------------------
 
+
 def _cmd_list_sinks() -> None:
     from iot_simulator.sinks.factory import _SINK_REGISTRY
 
     print(f"\n{'Sink Type':<14} {'Class':<20} {'Install Extra'}")
     print("-" * 62)
-    for name, (module_path, class_name) in _SINK_REGISTRY.items():
+    for name, (_module_path, class_name) in _SINK_REGISTRY.items():
         extra = _SINK_EXTRAS.get(name)
-        if extra is None:
-            extra_str = "(built-in)"
-        else:
-            extra_str = f"pip install iot-data-simulator[{extra}]"
+        extra_str = "(built-in)" if extra is None else f"pip install iot-data-simulator[{extra}]"
         print(f"{name:<14} {class_name:<20} {extra_str}")
     print()
 
 
 # -- list-sensors -----------------------------------------------------------
+
 
 def _cmd_list_sensors(industry_name: str) -> None:
     from iot_simulator.sensor_models import IndustryType, get_industry_sensors
@@ -415,9 +452,11 @@ def _cmd_list_sensors(industry_name: str) -> None:
 
 # -- init-config ------------------------------------------------------------
 
+
 def _cmd_init_config(output_path: str | None) -> None:
     if output_path:
         from pathlib import Path
+
         Path(output_path).parent.mkdir(parents=True, exist_ok=True)
         Path(output_path).write_text(_SAMPLE_CONFIG)
         print(f"Sample config written to {output_path}")

@@ -21,6 +21,7 @@ import argparse
 def _check_aws():
     try:
         from iot_simulator.sinks.cloud_iot import AWSIoTSink  # noqa: F401
+
         return True
     except ImportError:
         print("AWSIoTSink requires boto3. Install with:")
@@ -31,6 +32,7 @@ def _check_aws():
 # ---------------------------------------------------------------------------
 # Case 1: Per-device topic
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Publish to a device-specific MQTT topic on AWS IoT Core.
@@ -51,7 +53,7 @@ def run_case_1() -> None:
     if not _check_aws():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AWSIoTSink
 
     print("=== Case 1: Per-device topic ===\n")
@@ -69,13 +71,15 @@ def run_case_1() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(AWSIoTSink(
-        endpoint=ENDPOINT,
-        topic=f"iot/devices/{DEVICE_ID}/telemetry",
-        region="us-east-1",
-        rate_hz=1.0,
-        batch_size=10,
-    ))
+    sim.add_sink(
+        AWSIoTSink(
+            endpoint=ENDPOINT,
+            topic=f"iot/devices/{DEVICE_ID}/telemetry",
+            region="us-east-1",
+            rate_hz=1.0,
+            batch_size=10,
+        )
+    )
 
     print(f"  Endpoint: {ENDPOINT}")
     print(f"  Topic: iot/devices/{DEVICE_ID}/telemetry")
@@ -85,6 +89,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Metadata device tagging
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Enrich records with device identity and location metadata.
@@ -102,7 +107,7 @@ def run_case_2() -> None:
     if not _check_aws():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AWSIoTSink
 
     print("=== Case 2: Metadata device tagging ===\n")
@@ -130,22 +135,25 @@ def run_case_2() -> None:
 
     sim.add_sink(tag_device, rate_hz=1.0, batch_size=20)
 
-    sim.add_sink(AWSIoTSink(
-        endpoint=ENDPOINT,
-        topic="iot/fleet/telemetry",    # Shared fleet topic
-        region="us-east-1",
-        rate_hz=1.0,
-        batch_size=20,
-    ))
+    sim.add_sink(
+        AWSIoTSink(
+            endpoint=ENDPOINT,
+            topic="iot/fleet/telemetry",  # Shared fleet topic
+            region="us-east-1",
+            rate_hz=1.0,
+            batch_size=20,
+        )
+    )
 
-    print(f"  Topic: iot/fleet/telemetry")
-    print(f"  Device metadata: device_id, firmware, site, GPS")
+    print("  Topic: iot/fleet/telemetry")
+    print("  Device metadata: device_id, firmware, site, GPS")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 3: Session token credentials
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Use temporary AWS credentials (e.g., from STS AssumeRole).
@@ -164,7 +172,7 @@ def run_case_3() -> None:
     if not _check_aws():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AWSIoTSink
 
     print("=== Case 3: Session token credentials ===\n")
@@ -183,20 +191,22 @@ def run_case_3() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(AWSIoTSink(
-        endpoint=ENDPOINT,
-        topic="iot/eu-factory/telemetry",
-        region="eu-west-1",
-        aws_access_key_id=ACCESS_KEY,
-        aws_secret_access_key=SECRET_KEY,
-        aws_session_token=SESSION_TOKEN,
-        rate_hz=0.5,
-        batch_size=10,
-    ))
+    sim.add_sink(
+        AWSIoTSink(
+            endpoint=ENDPOINT,
+            topic="iot/eu-factory/telemetry",
+            region="eu-west-1",
+            aws_access_key_id=ACCESS_KEY,
+            aws_secret_access_key=SECRET_KEY,
+            aws_session_token=SESSION_TOKEN,
+            rate_hz=0.5,
+            batch_size=10,
+        )
+    )
 
     print(f"  Endpoint: {ENDPOINT}")
-    print(f"  Region: eu-west-1")
-    print(f"  Auth: temporary STS credentials")
+    print("  Region: eu-west-1")
+    print("  Auth: temporary STS credentials")
     sim.run(duration_s=10)
 
 
@@ -204,10 +214,10 @@ def run_case_3() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="AWSIoTSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3], help="Which example case to run (default: 1)")
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3}

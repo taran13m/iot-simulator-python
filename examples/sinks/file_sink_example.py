@@ -21,10 +21,10 @@ import argparse
 import os
 import shutil
 
-
 # ---------------------------------------------------------------------------
 # Case 1: All three formats side-by-side
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Write the same data to CSV, JSON, and Parquet simultaneously.
@@ -50,29 +50,35 @@ def run_case_1() -> None:
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
     # CSV sink
-    sim.add_sink(FileSink(
-        path=f"{output_base}/csv",
-        format="csv",
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        FileSink(
+            path=f"{output_base}/csv",
+            format="csv",
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
     # JSON Lines sink
-    sim.add_sink(FileSink(
-        path=f"{output_base}/json",
-        format="json",
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        FileSink(
+            path=f"{output_base}/json",
+            format="json",
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
     # Parquet sink (requires pyarrow)
     try:
-        sim.add_sink(FileSink(
-            path=f"{output_base}/parquet",
-            format="parquet",
-            rate_hz=1.0,
-            batch_size=100,
-        ))
+        sim.add_sink(
+            FileSink(
+                path=f"{output_base}/parquet",
+                format="parquet",
+                rate_hz=1.0,
+                batch_size=100,
+            )
+        )
         print("  Parquet sink enabled (pyarrow found)")
     except ImportError:
         print("  Parquet sink skipped (install with: pip install iot-data-simulator[file])")
@@ -92,6 +98,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Rotation intervals
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Demonstrate file rotation producing multiple files over time.
@@ -114,13 +121,15 @@ def run_case_2() -> None:
 
     sim = Simulator(industries=["mining", "utilities"], update_rate_hz=2.0)
 
-    sim.add_sink(FileSink(
-        path=output_dir,
-        format="csv",
-        rotation="30s",       # New file every 30 seconds
-        rate_hz=1.0,
-        batch_size=500,
-    ))
+    sim.add_sink(
+        FileSink(
+            path=output_dir,
+            format="csv",
+            rotation="30s",  # New file every 30 seconds
+            rate_hz=1.0,
+            batch_size=500,
+        )
+    )
 
     sim.run(duration_s=90)
 
@@ -137,6 +146,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: Large multi-industry batch
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Generate a large dataset from 4 industries simultaneously.
@@ -164,12 +174,14 @@ def run_case_3() -> None:
     print(f"  Active sensors: {sim.sensor_count}")
     print(f"  Expected throughput: ~{sim.sensor_count * 5} records/sec\n")
 
-    sim.add_sink(FileSink(
-        path=output_dir,
-        format="json",
-        rate_hz=2.0,
-        batch_size=1000,
-    ))
+    sim.add_sink(
+        FileSink(
+            path=output_dir,
+            format="json",
+            rate_hz=2.0,
+            batch_size=1000,
+        )
+    )
 
     sim.run(duration_s=10)
 
@@ -183,6 +195,7 @@ def run_case_3() -> None:
 # ---------------------------------------------------------------------------
 # Case 4: Parquet read-back
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Write Parquet, then read it back and print a summary.
@@ -214,12 +227,14 @@ def run_case_4() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(FileSink(
-        path=output_dir,
-        format="parquet",
-        rate_hz=1.0,
-        batch_size=500,
-    ))
+    sim.add_sink(
+        FileSink(
+            path=output_dir,
+            format="parquet",
+            rate_hz=1.0,
+            batch_size=500,
+        )
+    )
 
     sim.run(duration_s=8)
 
@@ -236,7 +251,7 @@ def run_case_4() -> None:
     print(f"\n  Read back: {filepath}")
     print(f"  Rows:    {len(df)}")
     print(f"  Columns: {list(df.columns)}")
-    print(f"\n  Summary statistics:")
+    print("\n  Summary statistics:")
     print(f"    Industries:   {sorted(df['industry'].unique())}")
     print(f"    Sensors:      {df['sensor_name'].nunique()}")
     print(f"    Avg value:    {df['value'].mean():.3f}")
@@ -247,10 +262,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="FileSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

@@ -1,4 +1,4 @@
-"""Tests for iot_simulator.config – YAML config loading and parsing."""
+"""Tests for iot_simulator.config - YAML config loading and parsing."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ from pathlib import Path
 import pytest
 
 from iot_simulator.config import SimulatorYAMLConfig, load_yaml_config
-
 
 # -----------------------------------------------------------------------
 # SimulatorYAMLConfig model

@@ -25,6 +25,7 @@ import os
 def _check_database():
     try:
         from iot_simulator.sinks.database import DatabaseSink  # noqa: F401
+
         return True
     except ImportError:
         print("DatabaseSink requires sqlalchemy + aiosqlite. Install with:")
@@ -41,6 +42,7 @@ def _clean_db(path: str) -> None:
 # ---------------------------------------------------------------------------
 # Case 1: SQLite basic
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Basic SQLite storage with moderate throughput.
@@ -64,12 +66,14 @@ def run_case_1() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(DatabaseSink(
-        connection_string=f"sqlite+aiosqlite:///{db_path}",
-        table="sensor_data",
-        rate_hz=1.0,
-        batch_size=200,
-    ))
+    sim.add_sink(
+        DatabaseSink(
+            connection_string=f"sqlite+aiosqlite:///{db_path}",
+            table="sensor_data",
+            rate_hz=1.0,
+            batch_size=200,
+        )
+    )
 
     sim.run(duration_s=8)
     print(f"\n  Data written to: {db_path}")
@@ -78,6 +82,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Custom table name
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Write to a named table for multi-table setups.
@@ -106,12 +111,14 @@ def run_case_2() -> None:
     sim = Simulator(industries=["mining", "utilities"], update_rate_hz=2.0)
 
     # Each industry could write to its own table
-    sim.add_sink(DatabaseSink(
-        connection_string=conn_str,
-        table="mining_sensors",    # Custom table name
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        DatabaseSink(
+            connection_string=conn_str,
+            table="mining_sensors",  # Custom table name
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
     sim.run(duration_s=6)
     print(f"\n  Data written to: {db_path} (table: mining_sensors)")
@@ -120,6 +127,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: Backpressure and retry
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Configure backpressure and retry policies for resilient storage.
@@ -148,21 +156,23 @@ def run_case_3() -> None:
         update_rate_hz=5.0,  # Fast generation to stress the buffer
     )
 
-    sim.add_sink(DatabaseSink(
-        connection_string=f"sqlite+aiosqlite:///{db_path}",
-        table="sensor_data",
-        rate_hz=0.5,                # Slow flush rate (every 2 seconds)
-        batch_size=200,
-        max_buffer_size=1000,       # Cap buffer at 1000 records
-        backpressure="drop_newest", # Drop new records when buffer is full
-        retry_count=5,              # Retry failed writes up to 5 times
-        retry_delay_s=2.0,          # Wait 2 seconds between retries
-    ))
+    sim.add_sink(
+        DatabaseSink(
+            connection_string=f"sqlite+aiosqlite:///{db_path}",
+            table="sensor_data",
+            rate_hz=0.5,  # Slow flush rate (every 2 seconds)
+            batch_size=200,
+            max_buffer_size=1000,  # Cap buffer at 1000 records
+            backpressure="drop_newest",  # Drop new records when buffer is full
+            retry_count=5,  # Retry failed writes up to 5 times
+            retry_delay_s=2.0,  # Wait 2 seconds between retries
+        )
+    )
 
     print(f"  Active sensors: {sim.sensor_count}")
     print(f"  Generation rate: ~{sim.sensor_count * 5} records/sec")
-    print(f"  Buffer limit: 1000 records (drop_newest policy)")
-    print(f"  Flush rate: 0.5 Hz (every 2 seconds)\n")
+    print("  Buffer limit: 1000 records (drop_newest policy)")
+    print("  Flush rate: 0.5 Hz (every 2 seconds)\n")
 
     sim.run(duration_s=10)
     print(f"\n  Data written to: {db_path}")
@@ -171,6 +181,7 @@ def run_case_3() -> None:
 # ---------------------------------------------------------------------------
 # Case 4: Query after run
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Write data and then query it back to verify integrity.
@@ -198,12 +209,14 @@ def run_case_4() -> None:
     conn_str = f"sqlite+aiosqlite:///{db_path}"
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
-    sim.add_sink(DatabaseSink(
-        connection_string=conn_str,
-        table="sensor_data",
-        rate_hz=1.0,
-        batch_size=200,
-    ))
+    sim.add_sink(
+        DatabaseSink(
+            connection_string=conn_str,
+            table="sensor_data",
+            rate_hz=1.0,
+            batch_size=200,
+        )
+    )
 
     sim.run(duration_s=8)
 
@@ -212,6 +225,7 @@ def run_case_4() -> None:
 
     async def query_results():
         import aiosqlite
+
         async with aiosqlite.connect(db_path) as db:
             # Total record count
             async with db.execute("SELECT COUNT(*) FROM sensor_data") as cursor:
@@ -230,17 +244,14 @@ def run_case_4() -> None:
 
             # Records per sensor type
             async with db.execute(
-                "SELECT sensor_type, COUNT(*) as cnt "
-                "FROM sensor_data GROUP BY sensor_type ORDER BY cnt DESC"
+                "SELECT sensor_type, COUNT(*) as cnt FROM sensor_data GROUP BY sensor_type ORDER BY cnt DESC"
             ) as cursor:
-                print(f"\n    Records by sensor type:")
+                print("\n    Records by sensor type:")
                 async for row in cursor:
                     print(f"      {row[0]:<16s} {row[1]:>6d}")
 
             # Fault count
-            async with db.execute(
-                "SELECT COUNT(*) FROM sensor_data WHERE fault_active = 1"
-            ) as cursor:
+            async with db.execute("SELECT COUNT(*) FROM sensor_data WHERE fault_active = 1") as cursor:
                 faults = (await cursor.fetchone())[0]
                 print(f"\n    Fault records:    {faults}")
 
@@ -251,10 +262,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="DatabaseSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

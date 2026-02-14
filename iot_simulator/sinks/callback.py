@@ -1,4 +1,4 @@
-"""Callback sink – delegates writes to a user-provided Python callable.
+"""Callback sink - delegates writes to a user-provided Python callable.
 
 This allows users to hook any custom logic into the pipeline without
 having to subclass :class:`Sink`::
@@ -10,7 +10,8 @@ from __future__ import annotations
 
 import asyncio
 import inspect
-from typing import Callable, Any
+from collections.abc import Callable
+from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -26,7 +27,7 @@ class CallbackSink(Sink):
 
     Parameters:
         callback: ``(records: list[SensorRecord]) -> None`` or async variant.
-        rate_hz: Throughput – how often to flush batches.
+        rate_hz: Throughput - how often to flush batches.
         **kwargs: Forwarded to :class:`Sink`.
     """
 

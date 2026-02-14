@@ -44,42 +44,48 @@ def main() -> None:
     )
 
     print(f"  Active sensors: {sim.sensor_count}")
-    print(f"  Generator rate: 2.0 Hz\n")
+    print("  Generator rate: 2.0 Hz\n")
 
     # --- Sink 1: Console (fast, for real-time visibility) ---
-    sim.add_sink(ConsoleSink(
-        fmt="text",
-        rate_hz=2.0,        # Flush 2 times per second
-        batch_size=20,       # Small batch for readability
-    ))
+    sim.add_sink(
+        ConsoleSink(
+            fmt="text",
+            rate_hz=2.0,  # Flush 2 times per second
+            batch_size=20,  # Small batch for readability
+        )
+    )
     print("  Sink 1: Console  (rate_hz=2.0, batch_size=20)")
 
     # --- Sink 2: CSV File (batched, for offline analysis) ---
-    sim.add_sink(FileSink(
-        path=output_dir,
-        format="csv",
-        rate_hz=0.5,         # Flush every 2 seconds
-        batch_size=500,      # Large batch for efficient writes
-    ))
+    sim.add_sink(
+        FileSink(
+            path=output_dir,
+            format="csv",
+            rate_hz=0.5,  # Flush every 2 seconds
+            batch_size=500,  # Large batch for efficient writes
+        )
+    )
     print("  Sink 2: File/CSV (rate_hz=0.5, batch_size=500)")
 
     # --- Sink 3: SQLite Database (moderate throughput) ---
     try:
         from iot_simulator.sinks.database import DatabaseSink
 
-        sim.add_sink(DatabaseSink(
-            connection_string=f"sqlite+aiosqlite:///{db_path}",
-            table="sensor_data",
-            rate_hz=1.0,         # Flush once per second
-            batch_size=200,      # Moderate batch
-        ))
+        sim.add_sink(
+            DatabaseSink(
+                connection_string=f"sqlite+aiosqlite:///{db_path}",
+                table="sensor_data",
+                rate_hz=1.0,  # Flush once per second
+                batch_size=200,  # Moderate batch
+            )
+        )
         print("  Sink 3: Database (rate_hz=1.0, batch_size=200)")
         db_enabled = True
     except ImportError:
         print("  Sink 3: Database (SKIPPED -- pip install iot-data-simulator[database])")
         db_enabled = False
 
-    print(f"\n  Running for 10 seconds...\n")
+    print("\n  Running for 10 seconds...\n")
     sim.run(duration_s=10)
 
     # --- Summary ---
@@ -97,10 +103,10 @@ def main() -> None:
 
         async def count_rows():
             import aiosqlite
-            async with aiosqlite.connect(db_path) as db:
-                async with db.execute("SELECT COUNT(*) FROM sensor_data") as cur:
-                    count = (await cur.fetchone())[0]
-                    print(f"  Database sink: {count} rows in {db_path}")
+
+            async with aiosqlite.connect(db_path) as db, db.execute("SELECT COUNT(*) FROM sensor_data") as cur:
+                count = (await cur.fetchone())[0]
+                print(f"  Database sink: {count} rows in {db_path}")
 
         asyncio.run(count_rows())
 

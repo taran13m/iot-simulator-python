@@ -12,23 +12,23 @@ from __future__ import annotations
 import math
 import random
 import time
-from enum import Enum
-from typing import Any, Callable
+from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel
 
 __all__ = [
+    "INDUSTRY_SENSORS",
     "IndustryType",
-    "SensorType",
     "SensorConfig",
     "SensorSimulator",
-    "INDUSTRY_SENSORS",
-    "get_industry_sensors",
+    "SensorType",
     "get_all_sensors",
+    "get_industry_sensors",
 ]
 
 
-class IndustryType(str, Enum):
+class IndustryType(StrEnum):
     """Industrial sector types."""
 
     MINING = "mining"
@@ -49,7 +49,7 @@ class IndustryType(str, Enum):
     RENEWABLE_ENERGY = "renewable_energy"
 
 
-class SensorType(str, Enum):
+class SensorType(StrEnum):
     """Types of industrial sensors."""
 
     TEMPERATURE = "temperature"
@@ -95,7 +95,7 @@ class SensorConfig(BaseModel):
     cycle_period_seconds: float = 60.0
     cycle_amplitude: float = 0.1  # As fraction of nominal
 
-    def __init__(  # noqa: D107 – intentional positional-arg shim
+    def __init__(
         self,
         name: str | None = None,
         sensor_type: SensorType | None = None,
@@ -170,11 +170,10 @@ class SensorSimulator:
         value += noise
 
         # Check for anomalies
-        if not self.fault_active:
-            if random.random() < self.config.anomaly_probability:
-                # Trigger anomaly
-                self.fault_active = True
-                self.fault_end_time = now + random.uniform(5, 30)  # 5-30 second anomaly
+        if not self.fault_active and random.random() < self.config.anomaly_probability:
+            # Trigger anomaly
+            self.fault_active = True
+            self.fault_end_time = now + random.uniform(5, 30)  # 5-30 second anomaly
 
         # Apply active fault
         if self.fault_active:
@@ -735,25 +734,74 @@ INDUSTRY_SENSORS: dict[IndustryType, list[SensorConfig]] = {
     ],
     IndustryType.RENEWABLE_ENERGY: [
         # Wind Turbine 1
-        SensorConfig("wind_turbine_1_wind_speed", SensorType.SPEED, "m/s", 0, 25, 8.5, 1.5, cyclic=True, cycle_period_seconds=180),
-        SensorConfig("wind_turbine_1_rotor_speed", SensorType.SPEED, "RPM", 0, 20, 12, 1.0, cyclic=True, cycle_period_seconds=120),
-        SensorConfig("wind_turbine_1_power_output", SensorType.POWER, "MW", 0, 3.6, 2.2, 0.3, cyclic=True, cycle_period_seconds=200),
+        SensorConfig(
+            "wind_turbine_1_wind_speed", SensorType.SPEED, "m/s", 0, 25, 8.5, 1.5, cyclic=True, cycle_period_seconds=180
+        ),
+        SensorConfig(
+            "wind_turbine_1_rotor_speed", SensorType.SPEED, "RPM", 0, 20, 12, 1.0, cyclic=True, cycle_period_seconds=120
+        ),
+        SensorConfig(
+            "wind_turbine_1_power_output",
+            SensorType.POWER,
+            "MW",
+            0,
+            3.6,
+            2.2,
+            0.3,
+            cyclic=True,
+            cycle_period_seconds=200,
+        ),
         SensorConfig("wind_turbine_1_nacelle_temp", SensorType.TEMPERATURE, "°C", 20, 75, 45, 3.0),
         SensorConfig("wind_turbine_1_gearbox_temp", SensorType.TEMPERATURE, "°C", 30, 80, 55, 3.5),
         SensorConfig("wind_turbine_1_gearbox_oil_pressure", SensorType.PRESSURE, "bar", 1.5, 4.5, 3.0, 0.2),
-        SensorConfig("wind_turbine_1_bearing_vibration", SensorType.VIBRATION, "mm/s", 0.5, 12.0, 2.5, 0.3, anomaly_probability=0.002),
+        SensorConfig(
+            "wind_turbine_1_bearing_vibration",
+            SensorType.VIBRATION,
+            "mm/s",
+            0.5,
+            12.0,
+            2.5,
+            0.3,
+            anomaly_probability=0.002,
+        ),
         SensorConfig("wind_turbine_1_pitch_angle", SensorType.POSITION, "°", 0, 90, 15, 2.0),
         SensorConfig("wind_turbine_1_yaw_position", SensorType.POSITION, "°", 0, 360, 180, 15.0, cyclic=True),
         SensorConfig("wind_turbine_1_generator_temp", SensorType.TEMPERATURE, "°C", 35, 90, 60, 4.0),
         # Solar Array 1
-        SensorConfig("solar_array_1_dc_power", SensorType.POWER, "kW", 0, 500, 300, 25, cyclic=True, cycle_period_seconds=3600),
+        SensorConfig(
+            "solar_array_1_dc_power", SensorType.POWER, "kW", 0, 500, 300, 25, cyclic=True, cycle_period_seconds=3600
+        ),
         SensorConfig("solar_array_1_dc_voltage", SensorType.VOLTAGE, "V", 500, 800, 650, 10),
-        SensorConfig("solar_array_1_dc_current", SensorType.CURRENT, "A", 0, 700, 450, 30, cyclic=True, cycle_period_seconds=3600),
-        SensorConfig("solar_array_1_panel_temp", SensorType.TEMPERATURE, "°C", 15, 65, 35, 4.0, cyclic=True, cycle_period_seconds=3600),
-        SensorConfig("solar_array_1_irradiance", SensorType.LEVEL, "W/m²", 0, 1200, 650, 80, cyclic=True, cycle_period_seconds=3600),
+        SensorConfig(
+            "solar_array_1_dc_current", SensorType.CURRENT, "A", 0, 700, 450, 30, cyclic=True, cycle_period_seconds=3600
+        ),
+        SensorConfig(
+            "solar_array_1_panel_temp",
+            SensorType.TEMPERATURE,
+            "°C",
+            15,
+            65,
+            35,
+            4.0,
+            cyclic=True,
+            cycle_period_seconds=3600,
+        ),
+        SensorConfig(
+            "solar_array_1_irradiance",
+            SensorType.LEVEL,
+            "W/m²",
+            0,
+            1200,
+            650,
+            80,
+            cyclic=True,
+            cycle_period_seconds=3600,
+        ),
         SensorConfig("solar_array_1_efficiency", SensorType.LEVEL, "%", 15, 22, 19, 0.5),
         # Solar Inverter 1
-        SensorConfig("solar_inverter_1_ac_power", SensorType.POWER, "kW", 0, 500, 285, 24, cyclic=True, cycle_period_seconds=3600),
+        SensorConfig(
+            "solar_inverter_1_ac_power", SensorType.POWER, "kW", 0, 500, 285, 24, cyclic=True, cycle_period_seconds=3600
+        ),
         SensorConfig("solar_inverter_1_ac_voltage", SensorType.VOLTAGE, "V", 380, 420, 400, 5),
         SensorConfig("solar_inverter_1_ac_current", SensorType.CURRENT, "A", 0, 700, 420, 28, cyclic=True),
         SensorConfig("solar_inverter_1_frequency", SensorType.LEVEL, "Hz", 49.9, 50.1, 50.0, 0.05),
@@ -762,14 +810,36 @@ INDUSTRY_SENSORS: dict[IndustryType, list[SensorConfig]] = {
         # Battery Energy Storage System (BESS)
         SensorConfig("bess_1_soc", SensorType.LEVEL, "%", 10, 100, 70, 2.0, cyclic=True, cycle_period_seconds=1800),
         SensorConfig("bess_1_voltage", SensorType.VOLTAGE, "V", 700, 850, 780, 8),
-        SensorConfig("bess_1_current", SensorType.CURRENT, "A", -500, 500, 50, 40, cyclic=True, cycle_period_seconds=900),
+        SensorConfig(
+            "bess_1_current", SensorType.CURRENT, "A", -500, 500, 50, 40, cyclic=True, cycle_period_seconds=900
+        ),
         SensorConfig("bess_1_power", SensorType.POWER, "kW", -400, 400, 40, 35, cyclic=True, cycle_period_seconds=900),
         SensorConfig("bess_1_temp_avg", SensorType.TEMPERATURE, "°C", 15, 45, 28, 2.0),
         SensorConfig("bess_1_temp_max", SensorType.TEMPERATURE, "°C", 20, 50, 32, 2.5),
         SensorConfig("bess_1_cycles_count", SensorType.LEVEL, "cycles", 0, 5000, 1200, 5),
         # Tracking System (Solar)
-        SensorConfig("solar_tracker_1_azimuth", SensorType.POSITION, "°", 0, 360, 180, 10.0, cyclic=True, cycle_period_seconds=43200),
-        SensorConfig("solar_tracker_1_elevation", SensorType.POSITION, "°", 0, 90, 45, 5.0, cyclic=True, cycle_period_seconds=43200),
+        SensorConfig(
+            "solar_tracker_1_azimuth",
+            SensorType.POSITION,
+            "°",
+            0,
+            360,
+            180,
+            10.0,
+            cyclic=True,
+            cycle_period_seconds=43200,
+        ),
+        SensorConfig(
+            "solar_tracker_1_elevation",
+            SensorType.POSITION,
+            "°",
+            0,
+            90,
+            45,
+            5.0,
+            cyclic=True,
+            cycle_period_seconds=43200,
+        ),
         SensorConfig("solar_tracker_1_motor_current", SensorType.CURRENT, "A", 0, 15, 5, 1.0),
     ],
 }

@@ -17,10 +17,10 @@ from __future__ import annotations
 
 import argparse
 
-
 # ---------------------------------------------------------------------------
 # Case 1: Lambda shorthand -- simplest possible sink
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """The absolute simplest sink: a lambda that prints batch sizes.
@@ -49,6 +49,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Async callback -- auto-detected by CallbackSink
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Async callback that simulates I/O-bound processing.
@@ -83,6 +84,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: Aggregation callback -- running analytics
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Compute running min/max/average across batches.
@@ -127,6 +129,7 @@ def run_case_3() -> None:
 # Case 4: Metadata padding for load testing
 # ---------------------------------------------------------------------------
 
+
 def run_case_4() -> None:
     """Inflate each record with ~1KB of padding in the metadata dict.
 
@@ -140,7 +143,6 @@ def run_case_4() -> None:
       - batch_size=200       -> large batches
       - 4 industries         -> many sensors (60+) for high throughput
     """
-    import sys
 
     from iot_simulator import Simulator
 
@@ -179,6 +181,7 @@ def run_case_4() -> None:
 # Case 5: Record transformation -- unit conversion
 # ---------------------------------------------------------------------------
 
+
 def run_case_5() -> None:
     """Transform records (Celsius -> Fahrenheit) and round values.
 
@@ -189,7 +192,7 @@ def run_case_5() -> None:
       - custom_sensors    -> temperature sensors for conversion demo
       - rate_hz=1.0       -> moderate pace for readability
     """
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
 
     print("=== Case 5: Record transformation (C -> F) ===\n")
 
@@ -228,15 +231,20 @@ def run_case_5() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="CallbackSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4, 5],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4, 5], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {
-        1: run_case_1, 2: run_case_2, 3: run_case_3,
-        4: run_case_4, 5: run_case_5,
+        1: run_case_1,
+        2: run_case_2,
+        3: run_case_3,
+        4: run_case_4,
+        5: run_case_5,
     }
     cases[args.case]()
 

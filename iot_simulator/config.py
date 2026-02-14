@@ -42,7 +42,8 @@ from typing import Any
 import yaml
 from pydantic import BaseModel, Field
 
-from iot_simulator.sensor_models import SensorConfig as SensorCfg, SensorType
+from iot_simulator.sensor_models import SensorConfig as SensorCfg
+from iot_simulator.sensor_models import SensorType
 
 __all__ = ["SimulatorYAMLConfig", "load_yaml_config"]
 
@@ -115,7 +116,9 @@ def load_yaml_config(path: str | Path) -> SimulatorYAMLConfig:
 
     logger.info(
         "Loaded config: %d industries, %d custom sensors, %d sinks",
-        len(config.industries), len(config.custom_sensors), len(config.sink_configs),
+        len(config.industries),
+        len(config.custom_sensors),
+        len(config.sink_configs),
     )
     return config
 
@@ -130,7 +133,7 @@ def _parse_custom_sensors(sensor_dicts: list[dict[str, Any]]) -> list[SensorCfg]
         try:
             sensor_type = SensorType(raw_type.lower().strip())
         except ValueError:
-            logger.warning("Unknown sensor_type '%s' – falling back to 'temperature'", raw_type)
+            logger.warning("Unknown sensor_type '%s' - falling back to 'temperature'", raw_type)
             sensor_type = SensorType.TEMPERATURE
 
         name = d.pop("name")
@@ -141,8 +144,15 @@ def _parse_custom_sensors(sensor_dicts: list[dict[str, Any]]) -> list[SensorCfg]
 
         # Remaining keys map to optional SensorConfig fields
         optional: dict[str, Any] = {}
-        for key in ("noise_std", "drift_rate", "anomaly_probability", "anomaly_magnitude",
-                     "update_frequency_hz", "cycle_period_seconds", "cycle_amplitude"):
+        for key in (
+            "noise_std",
+            "drift_rate",
+            "anomaly_probability",
+            "anomaly_magnitude",
+            "update_frequency_hz",
+            "cycle_period_seconds",
+            "cycle_amplitude",
+        ):
             if key in d:
                 optional[key] = float(d.pop(key))
         if "cyclic" in d:

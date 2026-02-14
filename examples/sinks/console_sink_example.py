@@ -15,12 +15,11 @@ Usage::
 from __future__ import annotations
 
 import argparse
-import sys
-
 
 # ---------------------------------------------------------------------------
 # Case 1: Text format -- low frequency, human-readable
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Human-readable text output at a comfortable reading pace.
@@ -45,6 +44,7 @@ def run_case_1() -> None:
 # Case 2: JSON format with pre-populated metadata
 # ---------------------------------------------------------------------------
 
+
 def run_case_2() -> None:
     """JSON output with custom sensors carrying metadata tags.
 
@@ -54,8 +54,8 @@ def run_case_2() -> None:
       - metadata dict       -> extra fields (location, asset_id) in each record
       - rate_hz=1.0         -> flush once per second
     """
-    from iot_simulator import Simulator, SensorConfig, SensorType
-    from iot_simulator.sinks import ConsoleSink, CallbackSink
+    from iot_simulator import SensorConfig, SensorType, Simulator
+    from iot_simulator.sinks import ConsoleSink
 
     print("=== Case 2: JSON format with metadata ===\n")
 
@@ -88,6 +88,7 @@ def run_case_2() -> None:
 # Case 3: High-frequency firehose
 # ---------------------------------------------------------------------------
 
+
 def run_case_3() -> None:
     """Stress-test stdout with a fast generator and no rate limiting.
 
@@ -114,6 +115,7 @@ def run_case_3() -> None:
 # Case 4: Fault-only filtered output
 # ---------------------------------------------------------------------------
 
+
 def run_case_4() -> None:
     """Print only records where a fault/anomaly is active.
 
@@ -125,8 +127,7 @@ def run_case_4() -> None:
       - CallbackSink filter  -> only forward fault records to stdout
       - update_rate_hz=5.0   -> faster generation to catch more anomalies
     """
-    from iot_simulator import Simulator, SensorConfig, SensorType
-    from iot_simulator.sinks import ConsoleSink
+    from iot_simulator import SensorConfig, SensorType, Simulator
 
     print("=== Case 4: Fault-only filtered output ===\n")
     print("(Only printing records with fault_active=True)\n")
@@ -135,14 +136,24 @@ def run_case_4() -> None:
     sim = Simulator(
         custom_sensors=[
             SensorConfig(
-                "pump_vibration", SensorType.VIBRATION, "mm/s",
-                0.5, 15.0, 2.5, noise_std=0.3,
+                "pump_vibration",
+                SensorType.VIBRATION,
+                "mm/s",
+                0.5,
+                15.0,
+                2.5,
+                noise_std=0.3,
                 anomaly_probability=0.3,  # 30% chance of fault
                 anomaly_magnitude=3.0,
             ),
             SensorConfig(
-                "motor_temp", SensorType.TEMPERATURE, "°C",
-                40, 95, 65, noise_std=2.0,
+                "motor_temp",
+                SensorType.TEMPERATURE,
+                "°C",
+                40,
+                95,
+                65,
+                noise_std=2.0,
                 anomaly_probability=0.3,
                 anomaly_magnitude=2.0,
             ),
@@ -170,10 +181,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ConsoleSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

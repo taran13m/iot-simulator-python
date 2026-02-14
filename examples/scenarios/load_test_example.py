@@ -39,10 +39,22 @@ def _run_load_test(
 
     # All 16 built-in industries
     all_industries = [
-        "mining", "utilities", "manufacturing", "oil_gas",
-        "aerospace", "space", "water_wastewater", "electric_power",
-        "automotive", "chemical", "food_beverage", "pharmaceutical",
-        "data_center", "smart_building", "agriculture", "renewable_energy",
+        "mining",
+        "utilities",
+        "manufacturing",
+        "oil_gas",
+        "aerospace",
+        "space",
+        "water_wastewater",
+        "electric_power",
+        "automotive",
+        "chemical",
+        "food_beverage",
+        "pharmaceutical",
+        "data_center",
+        "smart_building",
+        "agriculture",
+        "renewable_energy",
     ]
 
     sim = Simulator(
@@ -94,19 +106,21 @@ def _run_load_test(
                 f"{mbps:>5.2f} MB/s"
             )
 
-    sim.add_sink(CallbackSink(
-        measure_throughput,
-        rate_hz=10.0,                     # 10 flushes per second
-        batch_size=500,                   # 500 records per flush
-        max_buffer_size=max_buffer_size,
-        backpressure=backpressure,
-    ))
+    sim.add_sink(
+        CallbackSink(
+            measure_throughput,
+            rate_hz=10.0,  # 10 flushes per second
+            batch_size=500,  # 500 records per flush
+            max_buffer_size=max_buffer_size,
+            backpressure=backpressure,
+        )
+    )
 
     sim.run(duration_s=duration_s)
 
     # Final summary
     elapsed = time.time() - (stats["start_time"] or time.time())
-    print(f"\n  === Load Test Results ===")
+    print("\n  === Load Test Results ===")
     print(f"  Total records:     {stats['total_records']:,}")
     print(f"  Total data:        {stats['total_bytes'] / 1024 / 1024:.2f} MB")
     print(f"  Avg throughput:    {stats['total_records'] / max(elapsed, 0.001):,.0f} records/sec")
@@ -117,6 +131,7 @@ def _run_load_test(
 # ---------------------------------------------------------------------------
 # Case 1: drop_oldest (default backpressure)
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Load test with drop_oldest backpressure.
@@ -145,6 +160,7 @@ def run_case_1() -> None:
 # Case 2: drop_newest
 # ---------------------------------------------------------------------------
 
+
 def run_case_2() -> None:
     """Load test with drop_newest backpressure.
 
@@ -159,7 +175,7 @@ def run_case_2() -> None:
     print("=== Case 2: Load test -- drop_newest backpressure ===\n")
     _run_load_test(
         backpressure="drop_newest",
-        max_buffer_size=2000,    # Small buffer to trigger drops
+        max_buffer_size=2000,  # Small buffer to trigger drops
         update_rate_hz=50.0,
         duration_s=10.0,
     )
@@ -168,6 +184,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: block
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Load test with blocking backpressure.
@@ -185,7 +202,7 @@ def run_case_3() -> None:
     _run_load_test(
         backpressure="block",
         max_buffer_size=3000,
-        update_rate_hz=20.0,     # Lower rate to avoid excessive blocking
+        update_rate_hz=20.0,  # Lower rate to avoid excessive blocking
         duration_s=10.0,
     )
 
@@ -194,10 +211,12 @@ def run_case_3() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Load test examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3],
-                        help="Which backpressure policy to test (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3], help="Which backpressure policy to test (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3}

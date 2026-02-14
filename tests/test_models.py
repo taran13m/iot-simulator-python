@@ -1,4 +1,4 @@
-"""Tests for iot_simulator.models – SensorRecord creation and serialisation."""
+"""Tests for iot_simulator.models - SensorRecord creation and serialisation."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import time
 import pytest
 
 from iot_simulator.models import SensorRecord
-
 
 # -----------------------------------------------------------------------
 # Construction

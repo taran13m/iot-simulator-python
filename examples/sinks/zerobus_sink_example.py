@@ -22,6 +22,7 @@ import argparse
 def _check_zerobus():
     try:
         from iot_simulator.sinks.zerobus import ZerobusSink  # noqa: F401
+
         return True
     except ImportError:
         print("ZerobusSink requires databricks-zerobus-ingest-sdk. Install with:")
@@ -32,6 +33,7 @@ def _check_zerobus():
 # ---------------------------------------------------------------------------
 # Case 1: Named Databricks profile
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Use a named profile from ~/.databrickscfg for authentication.
@@ -67,24 +69,27 @@ def run_case_1() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(ZerobusSink(
-        server_endpoint=SERVER_ENDPOINT,
-        table_name=TABLE_NAME,
-        databricks_profile="staging",  # Reads from ~/.databrickscfg [staging]
-        record_type="json",
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        ZerobusSink(
+            server_endpoint=SERVER_ENDPOINT,
+            table_name=TABLE_NAME,
+            databricks_profile="staging",  # Reads from ~/.databrickscfg [staging]
+            record_type="json",
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
     print(f"  Endpoint: {SERVER_ENDPOINT}")
     print(f"  Table: {TABLE_NAME}")
-    print(f"  Auth: ~/.databrickscfg [staging]")
+    print("  Auth: ~/.databrickscfg [staging]")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 2: Explicit credentials
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Pass all three credentials explicitly (no profile/env lookup).
@@ -103,7 +108,7 @@ def run_case_2() -> None:
     if not _check_zerobus():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.zerobus import ZerobusSink
 
     print("=== Case 2: Explicit credentials ===\n")
@@ -126,25 +131,28 @@ def run_case_2() -> None:
         update_rate_hz=2.0,
     )
 
-    sim.add_sink(ZerobusSink(
-        server_endpoint=SERVER_ENDPOINT,
-        table_name=TABLE_NAME,
-        workspace_url=WORKSPACE_URL,
-        client_id=CLIENT_ID,
-        client_secret=CLIENT_SECRET,
-        record_type="json",
-        rate_hz=1.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        ZerobusSink(
+            server_endpoint=SERVER_ENDPOINT,
+            table_name=TABLE_NAME,
+            workspace_url=WORKSPACE_URL,
+            client_id=CLIENT_ID,
+            client_secret=CLIENT_SECRET,
+            record_type="json",
+            rate_hz=1.0,
+            batch_size=50,
+        )
+    )
 
     print(f"  Workspace: {WORKSPACE_URL}")
-    print(f"  Auth: explicit client_id + client_secret")
+    print("  Auth: explicit client_id + client_secret")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 3: Environment variable resolution
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Rely on environment variables for credential resolution.
@@ -179,7 +187,7 @@ def run_case_3() -> None:
     if missing:
         print("  The following environment variables must be set:")
         for v in missing:
-            print(f"    export {v}=\"...\"")
+            print(f'    export {v}="..."')
         print("\n  Skipping this example.")
         return
 
@@ -189,15 +197,17 @@ def run_case_3() -> None:
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
     # No explicit credentials -- SDK resolves from DATABRICKS_* env vars
-    sim.add_sink(ZerobusSink(
-        server_endpoint=SERVER_ENDPOINT,
-        table_name=TABLE_NAME,
-        record_type="json",
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        ZerobusSink(
+            server_endpoint=SERVER_ENDPOINT,
+            table_name=TABLE_NAME,
+            record_type="json",
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
-    print(f"  Auth: DATABRICKS_* environment variables")
+    print("  Auth: DATABRICKS_* environment variables")
     print(f"  DATABRICKS_HOST: {os.environ.get('DATABRICKS_HOST', '(not set)')}")
     sim.run(duration_s=10)
 
@@ -205,6 +215,7 @@ def run_case_3() -> None:
 # ---------------------------------------------------------------------------
 # Case 4: Proto vs JSON record type
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Compare JSON and Proto record types side-by-side.
@@ -230,27 +241,31 @@ def run_case_4() -> None:
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
     # JSON mode sink -- writes to one table
-    sim.add_sink(ZerobusSink(
-        server_endpoint=SERVER_ENDPOINT,
-        table_name="catalog.schema.sensor_data_json",
-        databricks_profile="staging",
-        record_type="json",       # JSON mode -- no schema needed
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        ZerobusSink(
+            server_endpoint=SERVER_ENDPOINT,
+            table_name="catalog.schema.sensor_data_json",
+            databricks_profile="staging",
+            record_type="json",  # JSON mode -- no schema needed
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
     # Proto mode sink -- writes to another table
-    sim.add_sink(ZerobusSink(
-        server_endpoint=SERVER_ENDPOINT,
-        table_name="catalog.schema.sensor_data_proto",
-        databricks_profile="staging",
-        record_type="proto",      # Proto mode -- more efficient encoding
-        rate_hz=1.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        ZerobusSink(
+            server_endpoint=SERVER_ENDPOINT,
+            table_name="catalog.schema.sensor_data_proto",
+            databricks_profile="staging",
+            record_type="proto",  # Proto mode -- more efficient encoding
+            rate_hz=1.0,
+            batch_size=100,
+        )
+    )
 
-    print(f"  JSON table:  catalog.schema.sensor_data_json")
-    print(f"  Proto table: catalog.schema.sensor_data_proto")
+    print("  JSON table:  catalog.schema.sensor_data_json")
+    print("  Proto table: catalog.schema.sensor_data_proto")
     sim.run(duration_s=10)
 
 
@@ -258,10 +273,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="ZerobusSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

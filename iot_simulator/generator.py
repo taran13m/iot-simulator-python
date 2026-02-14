@@ -1,4 +1,4 @@
-"""Data generator – produces SensorRecord batches each tick.
+"""Data generator - produces SensorRecord batches each tick.
 
 Wraps the existing ``sensor_models.py`` engine and supports both
 built-in industry sensor sets **and** user-defined custom sensors.
@@ -40,7 +40,7 @@ class DataGenerator:
         custom_industry:
             Grouping label applied to ``custom_sensors`` records.
         update_rate_hz:
-            Target generation rate (informational – the actual timing
+            Target generation rate (informational - the actual timing
             is driven by :class:`Simulator`).
     """
 
@@ -84,7 +84,7 @@ class DataGenerator:
         logger.info("Added %d custom sensors under industry '%s'", len(sensors), industry)
 
     # ------------------------------------------------------------------
-    # Tick – produces one batch of SensorRecords
+    # Tick - produces one batch of SensorRecords
     # ------------------------------------------------------------------
 
     def tick(self) -> list[SensorRecord]:
@@ -100,7 +100,9 @@ class DataGenerator:
                     industry=industry,
                     value=value,
                     unit=cfg.unit,
-                    sensor_type=cfg.sensor_type.value if isinstance(cfg.sensor_type, SensorType) else str(cfg.sensor_type),
+                    sensor_type=cfg.sensor_type.value
+                    if isinstance(cfg.sensor_type, SensorType)
+                    else str(cfg.sensor_type),
                     timestamp=now,
                     min_value=cfg.min_value,
                     max_value=cfg.max_value,
@@ -168,24 +170,22 @@ class DataGenerator:
 
                 # Optional fields with defaults
                 kwargs: dict[str, Any] = {}
-                if "noise_std" in row and row["noise_std"]:
+                if row.get("noise_std"):
                     kwargs["noise_std"] = float(row["noise_std"])
-                if "drift_rate" in row and row["drift_rate"]:
+                if row.get("drift_rate"):
                     kwargs["drift_rate"] = float(row["drift_rate"])
-                if "anomaly_probability" in row and row["anomaly_probability"]:
+                if row.get("anomaly_probability"):
                     kwargs["anomaly_probability"] = float(row["anomaly_probability"])
-                if "anomaly_magnitude" in row and row["anomaly_magnitude"]:
+                if row.get("anomaly_magnitude"):
                     kwargs["anomaly_magnitude"] = float(row["anomaly_magnitude"])
-                if "cyclic" in row and row["cyclic"]:
+                if row.get("cyclic"):
                     kwargs["cyclic"] = row["cyclic"].strip().lower() in ("true", "1", "yes")
-                if "cycle_period_seconds" in row and row["cycle_period_seconds"]:
+                if row.get("cycle_period_seconds"):
                     kwargs["cycle_period_seconds"] = float(row["cycle_period_seconds"])
-                if "cycle_amplitude" in row and row["cycle_amplitude"]:
+                if row.get("cycle_amplitude"):
                     kwargs["cycle_amplitude"] = float(row["cycle_amplitude"])
 
-                sensors.append(
-                    SensorConfig(name, sensor_type, unit, min_val, max_val, nominal, **kwargs)
-                )
+                sensors.append(SensorConfig(name, sensor_type, unit, min_val, max_val, nominal, **kwargs))
 
         gen = cls(update_rate_hz=update_rate_hz)
         gen.add_sensors(sensors, industry=industry)
@@ -200,7 +200,7 @@ class DataGenerator:
         try:
             industry_enum = IndustryType(name)
         except ValueError:
-            logger.warning("Unknown built-in industry '%s' – skipping", name)
+            logger.warning("Unknown built-in industry '%s' - skipping", name)
             return
 
         simulators = get_industry_sensors(industry_enum)

@@ -1,4 +1,4 @@
-"""Tests for iot_simulator.sensor_models – SensorConfig, SensorSimulator, industry helpers."""
+"""Tests for iot_simulator.sensor_models - SensorConfig, SensorSimulator, industry helpers."""
 
 from __future__ import annotations
 
@@ -13,7 +13,6 @@ from iot_simulator.sensor_models import (
     get_all_sensors,
     get_industry_sensors,
 )
-
 
 # -----------------------------------------------------------------------
 # SensorConfig (Pydantic model)
@@ -45,8 +44,15 @@ class TestSensorConfig:
 
     def test_positional_with_keyword_mix(self) -> None:
         cfg = SensorConfig(
-            "s1", SensorType.SPEED, "RPM", 0, 3000, 1500, 10,
-            cyclic=True, cycle_period_seconds=120,
+            "s1",
+            SensorType.SPEED,
+            "RPM",
+            0,
+            3000,
+            1500,
+            10,
+            cyclic=True,
+            cycle_period_seconds=120,
         )
         assert cfg.cyclic is True
         assert cfg.cycle_period_seconds == 120.0
@@ -54,8 +60,9 @@ class TestSensorConfig:
     def test_frozen_model(self) -> None:
         from pydantic import ValidationError
 
-        cfg = SensorConfig(name="s", sensor_type=SensorType.FLOW, unit="LPM",
-                           min_value=0, max_value=100, nominal_value=50)
+        cfg = SensorConfig(
+            name="s", sensor_type=SensorType.FLOW, unit="LPM", min_value=0, max_value=100, nominal_value=50
+        )
         with pytest.raises(ValidationError, match="frozen"):
             cfg.name = "changed"  # type: ignore[misc]
 

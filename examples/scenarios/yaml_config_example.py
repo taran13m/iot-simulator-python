@@ -37,6 +37,7 @@ def main() -> None:
 
     # --- Load the YAML configuration ---
     from iot_simulator.config import load_yaml_config
+
     cfg = load_yaml_config(config_path)
 
     # Set up logging
@@ -56,6 +57,7 @@ def main() -> None:
 
     # --- Build the Simulator ---
     from iot_simulator.simulator import Simulator
+
     sim = Simulator(
         industries=cfg.industries or None,
         custom_sensors=cfg.custom_sensors or None,
@@ -65,9 +67,11 @@ def main() -> None:
 
     # --- Create sinks from config via the factory ---
     from iot_simulator.sinks.factory import create_sink
+
     if not cfg.sink_configs:
         # Fallback: console sink if no sinks defined
         from iot_simulator.sinks.console import ConsoleSink
+
         sim.add_sink(ConsoleSink(rate_hz=1.0))
     else:
         for sink_dict in cfg.sink_configs:

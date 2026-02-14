@@ -1,14 +1,16 @@
-"""Simulator – top-level orchestrator that wires the data generator to
+"""Simulator - top-level orchestrator that wires the data generator to
 one or more sinks, each with independent throughput control.
 """
 
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import signal
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Any
+from typing import Any
 
 from iot_simulator.generator import DataGenerator
 from iot_simulator.models import SensorRecord
@@ -117,7 +119,7 @@ class Simulator:
     # ------------------------------------------------------------------
 
     def run(self, duration_s: float | None = None) -> None:
-        """Blocking entry point – starts the event loop.
+        """Blocking entry point - starts the event loop.
 
         Parameters:
             duration_s: If provided, stop automatically after this many
@@ -129,9 +131,9 @@ class Simulator:
             logger.info("Interrupted by user")
 
     async def run_async(self, duration_s: float | None = None) -> None:
-        """Async entry point – runs inside an existing event loop."""
+        """Async entry point - runs inside an existing event loop."""
         if not self._runners:
-            logger.warning("No sinks registered – nothing to do. Call add_sink() first.")
+            logger.warning("No sinks registered - nothing to do. Call add_sink() first.")
             return
 
         logger.info(
@@ -153,10 +155,8 @@ class Simulator:
         loop = asyncio.get_running_loop()
         stop_event = asyncio.Event()
         for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
+            with contextlib.suppress(NotImplementedError):
                 loop.add_signal_handler(sig, stop_event.set)
-            except NotImplementedError:
-                pass  # Windows doesn't support add_signal_handler
 
         try:
             tick_count = 0
@@ -165,12 +165,12 @@ class Simulator:
                 if duration_s is not None:
                     elapsed = asyncio.get_event_loop().time() - start_time
                     if elapsed >= duration_s:
-                        logger.info("Duration reached (%.1fs) – stopping", duration_s)
+                        logger.info("Duration reached (%.1fs) - stopping", duration_s)
                         break
 
                 # Check stop signal
                 if stop_event.is_set():
-                    logger.info("Stop signal received – shutting down")
+                    logger.info("Stop signal received - shutting down")
                     break
 
                 # Generate a batch
@@ -183,7 +183,7 @@ class Simulator:
 
                 tick_count += 1
                 if tick_count % 100 == 0:
-                    logger.debug("Tick %d – generated %d records", tick_count, len(records))
+                    logger.debug("Tick %d - generated %d records", tick_count, len(records))
 
                 # Sleep for remaining interval
                 tick_elapsed = asyncio.get_event_loop().time() - tick_start

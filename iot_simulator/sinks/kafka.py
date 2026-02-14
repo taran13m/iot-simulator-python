@@ -1,4 +1,4 @@
-"""Kafka sink – publishes sensor records to Apache Kafka.
+"""Kafka sink - publishes sensor records to Apache Kafka.
 
 Requires the ``kafka`` extra::
 
@@ -7,7 +7,6 @@ Requires the ``kafka`` extra::
 
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
 
@@ -20,7 +19,6 @@ logger = logging.getLogger("iot_simulator.sinks.kafka")
 
 try:
     from aiokafka import AIOKafkaProducer
-    from aiokafka.errors import KafkaError
 
     KAFKA_AVAILABLE = True
 except ImportError:
@@ -65,8 +63,7 @@ class KafkaSink(Sink):
     ) -> None:
         if not KAFKA_AVAILABLE:
             raise ImportError(
-                "aiokafka is required for KafkaSink.  "
-                "Install with: pip install iot-data-simulator[kafka]"
+                "aiokafka is required for KafkaSink.  Install with: pip install iot-data-simulator[kafka]"
             )
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._bootstrap_servers = bootstrap_servers
@@ -96,7 +93,7 @@ class KafkaSink(Sink):
         logger.info("Connecting to Kafka at %s ...", self._bootstrap_servers)
         self._producer = AIOKafkaProducer(**self._producer_config)
         await self._producer.start()
-        logger.info("Connected to Kafka – publishing to topic '%s'", self._topic)
+        logger.info("Connected to Kafka - publishing to topic '%s'", self._topic)
 
     async def write(self, records: list[SensorRecord]) -> None:
         if self._producer is None:

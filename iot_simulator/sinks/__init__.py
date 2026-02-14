@@ -11,8 +11,8 @@ import importlib
 from typing import Any
 
 from iot_simulator.sinks.base import Sink, SinkConfig, SinkRunner
-from iot_simulator.sinks.console import ConsoleSink
 from iot_simulator.sinks.callback import CallbackSink
+from iot_simulator.sinks.console import ConsoleSink
 
 # Lazy-loaded sinks (require optional extras)
 # Import them directly when needed:
@@ -25,11 +25,11 @@ from iot_simulator.sinks.callback import CallbackSink
 #   from iot_simulator.sinks.zerobus import ZerobusSink
 
 __all__ = [
+    "CallbackSink",
+    "ConsoleSink",
     "Sink",
     "SinkConfig",
     "SinkRunner",
-    "ConsoleSink",
-    "CallbackSink",
 ]
 
 

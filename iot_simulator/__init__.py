@@ -1,4 +1,4 @@
-"""IoT Data Simulator – generate realistic industrial sensor data and push
+"""IoT Data Simulator - generate realistic industrial sensor data and push
 it to pluggable sinks with per-sink throughput control.
 
 Quick start::
@@ -13,18 +13,18 @@ Quick start::
 
 from __future__ import annotations
 
-from iot_simulator.models import SensorRecord
-from iot_simulator.sensor_models import SensorConfig, SensorType, IndustryType
 from iot_simulator.generator import DataGenerator
+from iot_simulator.models import SensorRecord
+from iot_simulator.sensor_models import IndustryType, SensorConfig, SensorType
 from iot_simulator.simulator import Simulator
 
 __all__ = [
-    "Simulator",
-    "SensorRecord",
-    "SensorConfig",
-    "SensorType",
-    "IndustryType",
     "DataGenerator",
+    "IndustryType",
+    "SensorConfig",
+    "SensorRecord",
+    "SensorType",
+    "Simulator",
 ]
 
 __version__ = "0.1.0"

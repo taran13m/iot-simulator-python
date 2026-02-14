@@ -22,6 +22,7 @@ import argparse
 def _check_webhook():
     try:
         from iot_simulator.sinks.webhook import WebhookSink  # noqa: F401
+
         return True
     except ImportError:
         print("WebhookSink requires httpx. Install with:")
@@ -32,6 +33,7 @@ def _check_webhook():
 # ---------------------------------------------------------------------------
 # Case 1: Bearer token auth
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """POST sensor data with Bearer token authentication.
@@ -59,25 +61,28 @@ def run_case_1() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(WebhookSink(
-        url=URL,
-        headers={
-            "Authorization": f"Bearer {TOKEN}",
-            "X-Source": "iot-simulator",
-        },
-        timeout_s=30.0,
-        rate_hz=1.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        WebhookSink(
+            url=URL,
+            headers={
+                "Authorization": f"Bearer {TOKEN}",
+                "X-Source": "iot-simulator",
+            },
+            timeout_s=30.0,
+            rate_hz=1.0,
+            batch_size=50,
+        )
+    )
 
     print(f"  POSTing to: {URL}")
-    print(f"  Auth: Bearer token")
+    print("  Auth: Bearer token")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 2: High-frequency small batch
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Near-real-time delivery with small, frequent POSTs.
@@ -94,7 +99,7 @@ def run_case_2() -> None:
     if not _check_webhook():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.webhook import WebhookSink
 
     print("=== Case 2: High-frequency small batch ===\n")
@@ -110,21 +115,24 @@ def run_case_2() -> None:
         update_rate_hz=5.0,
     )
 
-    sim.add_sink(WebhookSink(
-        url=URL,
-        timeout_s=5.0,     # Short timeout for real-time delivery
-        rate_hz=10,         # 10 POSTs per second
-        batch_size=5,       # Tiny batches for low latency
-    ))
+    sim.add_sink(
+        WebhookSink(
+            url=URL,
+            timeout_s=5.0,  # Short timeout for real-time delivery
+            rate_hz=10,  # 10 POSTs per second
+            batch_size=5,  # Tiny batches for low latency
+        )
+    )
 
     print(f"  POSTing to: {URL}")
-    print(f"  Delivery: 10 Hz, 5 records/batch (near-real-time)")
+    print("  Delivery: 10 Hz, 5 records/batch (near-real-time)")
     sim.run(duration_s=8)
 
 
 # ---------------------------------------------------------------------------
 # Case 3: Low-frequency large batch
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Bulk ingestion with infrequent, large POSTs.
@@ -152,22 +160,25 @@ def run_case_3() -> None:
         update_rate_hz=5.0,
     )
 
-    sim.add_sink(WebhookSink(
-        url=URL,
-        timeout_s=60.0,     # Long timeout for large payloads
-        rate_hz=0.1,         # One POST every 10 seconds
-        batch_size=500,      # Large batch per POST
-    ))
+    sim.add_sink(
+        WebhookSink(
+            url=URL,
+            timeout_s=60.0,  # Long timeout for large payloads
+            rate_hz=0.1,  # One POST every 10 seconds
+            batch_size=500,  # Large batch per POST
+        )
+    )
 
     print(f"  POSTing to: {URL}")
     print(f"  Active sensors: {sim.sensor_count}")
-    print(f"  Delivery: 0.1 Hz, 500 records/batch (bulk)")
+    print("  Delivery: 0.1 Hz, 500 records/batch (bulk)")
     sim.run(duration_s=25)
 
 
 # ---------------------------------------------------------------------------
 # Case 4: Retry on failure
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Demonstrate retry behaviour when the endpoint is unreachable.
@@ -187,7 +198,7 @@ def run_case_4() -> None:
 
     import logging
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.webhook import WebhookSink
 
     print("=== Case 4: Retry on failure ===\n")
@@ -210,17 +221,19 @@ def run_case_4() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(WebhookSink(
-        url=BAD_URL,
-        timeout_s=2.0,          # Short timeout to fail fast
-        rate_hz=0.5,
-        batch_size=20,
-        retry_count=3,          # Retry 3 times before dropping
-        retry_delay_s=2.0,      # Wait 2 seconds between retries
-    ))
+    sim.add_sink(
+        WebhookSink(
+            url=BAD_URL,
+            timeout_s=2.0,  # Short timeout to fail fast
+            rate_hz=0.5,
+            batch_size=20,
+            retry_count=3,  # Retry 3 times before dropping
+            retry_delay_s=2.0,  # Wait 2 seconds between retries
+        )
+    )
 
     print(f"  POSTing to (will fail): {BAD_URL}")
-    print(f"  Retry policy: 3 attempts, 2s delay\n")
+    print("  Retry policy: 3 attempts, 2s delay\n")
     sim.run(duration_s=12)
 
 
@@ -228,10 +241,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="WebhookSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

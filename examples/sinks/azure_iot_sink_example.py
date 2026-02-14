@@ -21,6 +21,7 @@ import argparse
 def _check_azure():
     try:
         from iot_simulator.sinks.cloud_iot import AzureIoTSink  # noqa: F401
+
         return True
     except ImportError:
         print("AzureIoTSink requires azure-iot-device. Install with:")
@@ -31,6 +32,7 @@ def _check_azure():
 # ---------------------------------------------------------------------------
 # Case 1: Minimal 2-sensor payload
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Send a tiny payload from 2 custom sensors to Azure IoT Hub.
@@ -50,16 +52,14 @@ def run_case_1() -> None:
     if not _check_azure():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AzureIoTSink
 
     print("=== Case 1: Minimal 2-sensor payload ===\n")
 
     # -- Replace with your actual connection string --
     CONN_STR = (
-        "HostName=your-hub.azure-devices.net;"
-        "DeviceId=iot-simulator-device;"
-        "SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
+        "HostName=your-hub.azure-devices.net;DeviceId=iot-simulator-device;SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
     )
 
     sim = Simulator(
@@ -71,21 +71,24 @@ def run_case_1() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(AzureIoTSink(
-        connection_string=CONN_STR,
-        content_type="application/json",
-        rate_hz=1.0,
-        batch_size=10,
-    ))
+    sim.add_sink(
+        AzureIoTSink(
+            connection_string=CONN_STR,
+            content_type="application/json",
+            rate_hz=1.0,
+            batch_size=10,
+        )
+    )
 
     print(f"  Sensors: {sim.sensor_count}")
-    print(f"  Delivery: 1 Hz, 10 records/batch")
+    print("  Delivery: 1 Hz, 10 records/batch")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 2: Metadata-enriched messages
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Enrich messages with device metadata before sending to IoT Hub.
@@ -102,15 +105,13 @@ def run_case_2() -> None:
     if not _check_azure():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AzureIoTSink
 
     print("=== Case 2: Metadata-enriched messages ===\n")
 
     CONN_STR = (
-        "HostName=your-hub.azure-devices.net;"
-        "DeviceId=building-a-edge;"
-        "SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
+        "HostName=your-hub.azure-devices.net;DeviceId=building-a-edge;SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
     )
 
     sim = Simulator(
@@ -133,21 +134,24 @@ def run_case_2() -> None:
 
     sim.add_sink(enrich_metadata, rate_hz=1.0, batch_size=20)
 
-    sim.add_sink(AzureIoTSink(
-        connection_string=CONN_STR,
-        content_type="application/json",
-        rate_hz=1.0,
-        batch_size=20,
-    ))
+    sim.add_sink(
+        AzureIoTSink(
+            connection_string=CONN_STR,
+            content_type="application/json",
+            rate_hz=1.0,
+            batch_size=20,
+        )
+    )
 
     print(f"  Sensors: {sim.sensor_count}")
-    print(f"  Metadata: location, floor, device_id, firmware")
+    print("  Metadata: location, floor, device_id, firmware")
     sim.run(duration_s=10)
 
 
 # ---------------------------------------------------------------------------
 # Case 3: Throttled delivery
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Respect Azure IoT Hub throttling tiers with slow delivery.
@@ -164,15 +168,13 @@ def run_case_3() -> None:
     if not _check_azure():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.cloud_iot import AzureIoTSink
 
     print("=== Case 3: Throttled delivery ===\n")
 
     CONN_STR = (
-        "HostName=your-hub.azure-devices.net;"
-        "DeviceId=iot-simulator-device;"
-        "SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
+        "HostName=your-hub.azure-devices.net;DeviceId=iot-simulator-device;SharedAccessKey=YOUR_SHARED_ACCESS_KEY_HERE"
     )
 
     sim = Simulator(
@@ -184,16 +186,18 @@ def run_case_3() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(AzureIoTSink(
-        connection_string=CONN_STR,
-        rate_hz=0.2,              # One flush every 5 seconds
-        batch_size=10,            # Small batch per flush
-        max_buffer_size=500,      # Memory cap for edge devices
-        backpressure="drop_oldest",
-    ))
+    sim.add_sink(
+        AzureIoTSink(
+            connection_string=CONN_STR,
+            rate_hz=0.2,  # One flush every 5 seconds
+            batch_size=10,  # Small batch per flush
+            max_buffer_size=500,  # Memory cap for edge devices
+            backpressure="drop_oldest",
+        )
+    )
 
-    print(f"  Delivery: 0.2 Hz (every 5 seconds), 10 records/batch")
-    print(f"  Buffer limit: 500 records (drop_oldest)")
+    print("  Delivery: 0.2 Hz (every 5 seconds), 10 records/batch")
+    print("  Buffer limit: 500 records (drop_oldest)")
     sim.run(duration_s=30)
 
 
@@ -201,10 +205,10 @@ def run_case_3() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="AzureIoTSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3], help="Which example case to run (default: 1)")
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3}

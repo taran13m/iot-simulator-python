@@ -53,11 +53,13 @@ def main() -> None:
     print(f"  Loaded {sim.sensor_count} sensors as 'smart_office' industry\n")
 
     # Add a console sink for visibility
-    sim.add_sink(ConsoleSink(
-        fmt="text",
-        rate_hz=1.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        ConsoleSink(
+            fmt="text",
+            rate_hz=1.0,
+            batch_size=50,
+        )
+    )
 
     sim.run(duration_s=10)
 

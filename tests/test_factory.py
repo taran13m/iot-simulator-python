@@ -1,4 +1,4 @@
-"""Tests for iot_simulator.sinks.factory – create_sink and register_sink."""
+"""Tests for iot_simulator.sinks.factory - create_sink and register_sink."""
 
 from __future__ import annotations
 
@@ -7,7 +7,6 @@ import pytest
 from iot_simulator.sinks.base import Sink
 from iot_simulator.sinks.console import ConsoleSink
 from iot_simulator.sinks.factory import _SINK_REGISTRY, create_sink, register_sink
-
 
 # -----------------------------------------------------------------------
 # create_sink

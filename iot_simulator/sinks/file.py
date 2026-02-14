@@ -1,4 +1,4 @@
-"""File sink – writes sensor records to CSV, JSON, or Parquet files
+"""File sink - writes sensor records to CSV, JSON, or Parquet files
 with optional time-based rotation.
 
 Parquet support requires the ``file`` extra::
@@ -10,12 +10,10 @@ from __future__ import annotations
 
 import csv
 import io
-import json
 import logging
-import os
 import time
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -51,7 +49,7 @@ class FileSink(Sink):
     Parameters:
         path: Output directory (created automatically).
         format: ``"csv"``, ``"json"``, or ``"parquet"``.
-        rotation: Rotate to a new file periodically – e.g. ``"1h"``,
+        rotation: Rotate to a new file periodically - e.g. ``"1h"``,
                   ``"30m"``, ``"60s"``.  ``None`` means single file.
         rate_hz / batch_size / **kwargs: Forwarded to :class:`Sink`.
     """
@@ -118,12 +116,12 @@ class FileSink(Sink):
         filepath = self._dir / name
 
         if self._format == "parquet":
-            # Parquet is binary – we buffer dicts and flush via pyarrow
+            # Parquet is binary - we buffer dicts and flush via pyarrow
             self._parquet_path = filepath
         elif self._format == "json":
-            self._current_file = open(filepath, "w", encoding="utf-8")
+            self._current_file = open(filepath, "w", encoding="utf-8")  # noqa: SIM115
         else:
-            self._current_file = open(filepath, "w", newline="", encoding="utf-8")
+            self._current_file = open(filepath, "w", newline="", encoding="utf-8")  # noqa: SIM115
             self._csv_writer = None  # will init on first write
 
         self._file_start_time = time.time()
@@ -139,9 +137,16 @@ class FileSink(Sink):
 
     # --- CSV ---
 
-    _CSV_FIELDS = [
-        "timestamp", "industry", "sensor_name", "sensor_type",
-        "value", "unit", "min_value", "max_value", "nominal_value",
+    _CSV_FIELDS: ClassVar[list[str]] = [
+        "timestamp",
+        "industry",
+        "sensor_name",
+        "sensor_type",
+        "value",
+        "unit",
+        "min_value",
+        "max_value",
+        "nominal_value",
         "fault_active",
     ]
 
@@ -150,7 +155,9 @@ class FileSink(Sink):
             return
         if self._csv_writer is None:
             self._csv_writer = csv.DictWriter(
-                self._current_file, fieldnames=self._CSV_FIELDS, extrasaction="ignore",
+                self._current_file,
+                fieldnames=self._CSV_FIELDS,
+                extrasaction="ignore",
             )
             self._csv_writer.writeheader()
         for rec in records:
@@ -178,11 +185,10 @@ class FileSink(Sink):
         try:
             import pyarrow as pa
             import pyarrow.parquet as pq
-        except ImportError:
+        except ImportError as err:
             raise ImportError(
-                "pyarrow is required for Parquet output.  "
-                "Install with: pip install iot-data-simulator[file]"
-            )
+                "pyarrow is required for Parquet output.  Install with: pip install iot-data-simulator[file]"
+            ) from err
 
         table = pa.Table.from_pylist(self._record_buffer)
 

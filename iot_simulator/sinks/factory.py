@@ -1,4 +1,4 @@
-"""Sink factory – creates sink instances from configuration dicts.
+"""Sink factory - creates sink instances from configuration dicts.
 
 Used by the config-driven (YAML) mode to instantiate sinks declaratively::
 
@@ -24,8 +24,12 @@ logger = logging.getLogger("iot_simulator.sinks.factory")
 
 # Throughput keys that should be extracted before passing to the sink constructor
 _THROUGHPUT_KEYS = {
-    "rate_hz", "batch_size", "max_buffer_size",
-    "backpressure", "retry_count", "retry_delay_s",
+    "rate_hz",
+    "batch_size",
+    "max_buffer_size",
+    "backpressure",
+    "retry_count",
+    "retry_delay_s",
 }
 
 # Registry of type names → (module_path, class_name)
@@ -72,14 +76,12 @@ def create_sink(config: dict[str, Any]) -> Sink:
     sink_type = sink_type.lower().strip()
 
     if sink_type not in _SINK_REGISTRY:
-        raise ValueError(
-            f"Unknown sink type '{sink_type}'.  "
-            f"Available: {sorted(_SINK_REGISTRY)}"
-        )
+        raise ValueError(f"Unknown sink type '{sink_type}'.  Available: {sorted(_SINK_REGISTRY)}")
 
     module_path, class_name = _SINK_REGISTRY[sink_type]
 
     import importlib
+
     module = importlib.import_module(module_path)
     cls = getattr(module, class_name)
 

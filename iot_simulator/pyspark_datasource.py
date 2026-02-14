@@ -41,7 +41,8 @@ References:
 from __future__ import annotations
 
 import json
-from typing import Any, Iterator, Tuple
+from collections.abc import Iterator
+from typing import Any
 
 try:
     from pyspark.sql.datasource import (
@@ -51,16 +52,16 @@ try:
         InputPartition,
     )
     from pyspark.sql.types import StructType
-except ImportError:
+except ImportError as err:
     raise ImportError(
         "pyspark is required to use IoTSimulatorDataSource. "
         "Run this module inside a Spark environment "
         "(Databricks, spark-submit, etc.)."
-    )
+    ) from err
 
 __all__ = [
-    "IoTSimulatorDataSource",
     "IoTSimulatorBatchReader",
+    "IoTSimulatorDataSource",
     "IoTSimulatorStreamReader",
 ]
 
@@ -83,7 +84,7 @@ _SCHEMA = (
 )
 
 # -----------------------------------------------------------------------
-# Helpers – option parsing & DataGenerator construction
+# Helpers - option parsing & DataGenerator construction
 # -----------------------------------------------------------------------
 
 # Sensor-behavior option names mapped to their SensorConfig field names.
@@ -134,7 +135,6 @@ def _build_generator(options: dict[str, str]):
     from iot_simulator.sensor_models import (
         INDUSTRY_SENSORS,
         IndustryType,
-        SensorConfig,
         SensorSimulator,
     )
 
@@ -166,6 +166,7 @@ def _tick_to_rows(
 ) -> list[tuple]:
     """Run one tick across all simulators and return a list of Row tuples."""
     import time as _time
+
     from iot_simulator.sensor_models import SensorType
 
     now = _time.time()
@@ -179,26 +180,30 @@ def _tick_to_rows(
         if padding:
             metadata["padding"] = padding
 
-        rows.append((
-            cfg.name,                                                          # sensor_name
-            industry,                                                          # industry
-            float(value),                                                      # value
-            cfg.unit,                                                          # unit
-            cfg.sensor_type.value if isinstance(cfg.sensor_type, SensorType)
-            else str(cfg.sensor_type),                                         # sensor_type
-            float(now),                                                        # timestamp
-            float(cfg.min_value),                                              # min_value
-            float(cfg.max_value),                                              # max_value
-            float(cfg.nominal_value),                                          # nominal_value
-            bool(sim.fault_active),                                            # fault_active
-            json.dumps(metadata),                                              # metadata (JSON)
-        ))
+        rows.append(
+            (
+                cfg.name,  # sensor_name
+                industry,  # industry
+                float(value),  # value
+                cfg.unit,  # unit
+                cfg.sensor_type.value
+                if isinstance(cfg.sensor_type, SensorType)
+                else str(cfg.sensor_type),  # sensor_type
+                float(now),  # timestamp
+                float(cfg.min_value),  # min_value
+                float(cfg.max_value),  # max_value
+                float(cfg.nominal_value),  # nominal_value
+                bool(sim.fault_active),  # fault_active
+                json.dumps(metadata),  # metadata (JSON)
+            )
+        )
     return rows
 
 
 # -----------------------------------------------------------------------
 # DataSource
 # -----------------------------------------------------------------------
+
 
 class IoTSimulatorDataSource(DataSource):
     """PySpark custom data source backed by the IoT Data Simulator.
@@ -223,7 +228,7 @@ class IoTSimulatorDataSource(DataSource):
     +-----------------------+---------------------------------------------+------------+
     | driftRate             | Slow drift per update override              | per-sensor |
     +-----------------------+---------------------------------------------+------------+
-    | anomalyProbability    | Anomaly probability override (0.0–1.0)     | per-sensor |
+    | anomalyProbability    | Anomaly probability override (0.0-1.0)     | per-sensor |
     +-----------------------+---------------------------------------------+------------+
     | anomalyMagnitude      | Anomaly multiplier override                 | per-sensor |
     +-----------------------+---------------------------------------------+------------+
@@ -255,12 +260,13 @@ class IoTSimulatorDataSource(DataSource):
 # Batch reader
 # -----------------------------------------------------------------------
 
+
 class IoTSimulatorBatchReader(DataSourceReader):
     """Reads a fixed number of ticks from the IoT simulator (batch mode).
 
     The number of ticks is controlled by the ``numRows`` option.  Each tick
     produces one record per active sensor, so the total row count is
-    ``numRows × number_of_sensors``.
+    ``numRows x number_of_sensors``.
     """
 
     def __init__(self, schema: StructType, options: dict[str, str]) -> None:
@@ -268,7 +274,7 @@ class IoTSimulatorBatchReader(DataSourceReader):
         self.options = options
         self.num_ticks = int(options.get("numRows", "10"))
 
-    def read(self, partition) -> Iterator[Tuple]:
+    def read(self, partition) -> Iterator[tuple]:
         """Yield rows for the batch read.
 
         ``DataGenerator`` is constructed here (not in ``__init__``) because
@@ -278,13 +284,13 @@ class IoTSimulatorBatchReader(DataSourceReader):
         simulators, padding_bytes = _build_generator(self.options)
 
         for _ in range(self.num_ticks):
-            for row in _tick_to_rows(simulators, padding_bytes):
-                yield row
+            yield from _tick_to_rows(simulators, padding_bytes)
 
 
 # -----------------------------------------------------------------------
 # Streaming reader
 # -----------------------------------------------------------------------
+
 
 class _RangePartition(InputPartition):
     """Describes a contiguous range of ticks for a single partition."""
@@ -325,7 +331,7 @@ class IoTSimulatorStreamReader(DataSourceStreamReader):
         """Called when Spark has finished processing data up to *end*."""
         pass
 
-    def read(self, partition) -> Iterator[Tuple]:
+    def read(self, partition) -> Iterator[tuple]:
         """Generate rows for a single partition (range of ticks).
 
         ``DataGenerator`` is constructed here (not in ``__init__``) because
@@ -336,5 +342,4 @@ class IoTSimulatorStreamReader(DataSourceStreamReader):
 
         num_ticks = partition.end - partition.start
         for _ in range(num_ticks):
-            for row in _tick_to_rows(simulators, padding_bytes):
-                yield row
+            yield from _tick_to_rows(simulators, padding_bytes)

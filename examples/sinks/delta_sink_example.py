@@ -24,6 +24,7 @@ import shutil
 def _check_delta():
     try:
         from iot_simulator.sinks.delta import DeltaSink  # noqa: F401
+
         return True
     except ImportError:
         print("DeltaSink requires deltalake + pyarrow. Install with:")
@@ -34,6 +35,7 @@ def _check_delta():
 # ---------------------------------------------------------------------------
 # Case 1: Append mode
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Basic Delta table writes in append mode.
@@ -59,18 +61,21 @@ def run_case_1() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(DeltaSink(
-        table_path=table_path,
-        mode="append",
-        rate_hz=1.0,
-        batch_size=500,
-    ))
+    sim.add_sink(
+        DeltaSink(
+            table_path=table_path,
+            mode="append",
+            rate_hz=1.0,
+            batch_size=500,
+        )
+    )
 
     sim.run(duration_s=8)
 
     # Show table info
     try:
         from deltalake import DeltaTable
+
         dt = DeltaTable(table_path)
         print(f"\n  Delta table: {table_path}")
         print(f"  Version: {dt.version()}")
@@ -84,6 +89,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Overwrite mode
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Full-refresh mode: each write overwrites the entire table.
@@ -110,18 +116,21 @@ def run_case_2() -> None:
 
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
-    sim.add_sink(DeltaSink(
-        table_path=table_path,
-        mode="overwrite",    # Replace the table on each write
-        rate_hz=0.2,         # Overwrite every 5 seconds
-        batch_size=1000,
-    ))
+    sim.add_sink(
+        DeltaSink(
+            table_path=table_path,
+            mode="overwrite",  # Replace the table on each write
+            rate_hz=0.2,  # Overwrite every 5 seconds
+            batch_size=1000,
+        )
+    )
 
     sim.run(duration_s=12)
 
     # Show that only the last batch of data remains
     try:
         from deltalake import DeltaTable
+
         dt = DeltaTable(table_path)
         df = dt.to_pandas()
         print(f"\n  Delta table: {table_path}")
@@ -134,6 +143,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: Partition by industry
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Partition the Delta table by industry column.
@@ -163,24 +173,27 @@ def run_case_3() -> None:
         update_rate_hz=2.0,
     )
 
-    sim.add_sink(DeltaSink(
-        table_path=table_path,
-        mode="append",
-        partition_by=["industry"],  # Partition by industry column
-        rate_hz=1.0,
-        batch_size=500,
-    ))
+    sim.add_sink(
+        DeltaSink(
+            table_path=table_path,
+            mode="append",
+            partition_by=["industry"],  # Partition by industry column
+            rate_hz=1.0,
+            batch_size=500,
+        )
+    )
 
     sim.run(duration_s=8)
 
     # Show partition structure
     try:
         from deltalake import DeltaTable
+
         dt = DeltaTable(table_path)
         df = dt.to_pandas()
         print(f"\n  Delta table: {table_path}")
         print(f"  Total rows: {len(df)}")
-        print(f"  Partitions (by industry):")
+        print("  Partitions (by industry):")
         for industry, group in df.groupby("industry"):
             print(f"    {industry}: {len(group)} rows")
     except Exception as e:
@@ -190,6 +203,7 @@ def run_case_3() -> None:
 # ---------------------------------------------------------------------------
 # Case 4: Multi-column partition
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Partition by both industry and sensor_type for fine-grained layout.
@@ -220,13 +234,15 @@ def run_case_4() -> None:
         update_rate_hz=2.0,
     )
 
-    sim.add_sink(DeltaSink(
-        table_path=table_path,
-        mode="append",
-        partition_by=["industry", "sensor_type"],  # Two-level partitioning
-        rate_hz=0.5,
-        batch_size=1000,
-    ))
+    sim.add_sink(
+        DeltaSink(
+            table_path=table_path,
+            mode="append",
+            partition_by=["industry", "sensor_type"],  # Two-level partitioning
+            rate_hz=0.5,
+            batch_size=1000,
+        )
+    )
 
     print(f"  Active sensors: {sim.sensor_count}")
     sim.run(duration_s=10)
@@ -234,11 +250,12 @@ def run_case_4() -> None:
     # Show partition structure
     try:
         from deltalake import DeltaTable
+
         dt = DeltaTable(table_path)
         df = dt.to_pandas()
         print(f"\n  Delta table: {table_path}")
         print(f"  Total rows: {len(df)}")
-        print(f"  Partition combinations:")
+        print("  Partition combinations:")
         combos = df.groupby(["industry", "sensor_type"]).size()
         for (ind, stype), count in combos.items():
             print(f"    {ind}/{stype}: {count} rows")
@@ -250,10 +267,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="DeltaSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

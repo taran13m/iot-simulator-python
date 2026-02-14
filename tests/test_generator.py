@@ -1,17 +1,13 @@
-"""Tests for iot_simulator.generator – DataGenerator init, tick, and from_csv."""
+"""Tests for iot_simulator.generator - DataGenerator init, tick, and from_csv."""
 
 from __future__ import annotations
 
 import csv
-import tempfile
 from pathlib import Path
-
-import pytest
 
 from iot_simulator.generator import DataGenerator
 from iot_simulator.models import SensorRecord
 from iot_simulator.sensor_models import SensorConfig, SensorType
-
 
 # -----------------------------------------------------------------------
 # Basic construction and tick
@@ -108,10 +104,18 @@ class TestDataGeneratorFromCSV:
         csv_file = tmp_path / "sensors.csv"
         with csv_file.open("w", newline="") as f:
             writer = csv.writer(f)
-            writer.writerow([
-                "name", "sensor_type", "unit", "min_value", "max_value",
-                "nominal_value", "noise_std", "cyclic",
-            ])
+            writer.writerow(
+                [
+                    "name",
+                    "sensor_type",
+                    "unit",
+                    "min_value",
+                    "max_value",
+                    "nominal_value",
+                    "noise_std",
+                    "cyclic",
+                ]
+            )
             writer.writerow(["motor_speed", "speed", "RPM", "0", "3000", "1500", "10", "true"])
 
         gen = DataGenerator.from_csv(csv_file)

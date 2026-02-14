@@ -1,4 +1,4 @@
-"""Database sink – inserts sensor records into a SQL database via SQLAlchemy async.
+"""Database sink - inserts sensor records into a SQL database via SQLAlchemy async.
 
 Requires the ``database`` extra::
 
@@ -11,7 +11,6 @@ For PostgreSQL use ``asyncpg``; for SQLite use ``aiosqlite``.
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -21,8 +20,8 @@ __all__ = ["DatabaseSink"]
 logger = logging.getLogger("iot_simulator.sinks.database")
 
 try:
-    from sqlalchemy import Column, Float, String, Boolean, MetaData, Table, text
-    from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
+    from sqlalchemy import Boolean, Column, Float, MetaData, String, Table
+    from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
     SQLALCHEMY_AVAILABLE = True
 except ImportError:
@@ -55,8 +54,7 @@ class DatabaseSink(Sink):
     ) -> None:
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError(
-                "sqlalchemy is required for DatabaseSink.  "
-                "Install with: pip install iot-data-simulator[database]"
+                "sqlalchemy is required for DatabaseSink.  Install with: pip install iot-data-simulator[database]"
             )
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._url = connection_string
@@ -96,24 +94,26 @@ class DatabaseSink(Sink):
 
         rows = []
         for rec in records:
-            rows.append({
-                "timestamp": rec.timestamp,
-                "industry": rec.industry,
-                "sensor_name": rec.sensor_name,
-                "sensor_type": rec.sensor_type,
-                "value": rec.value,
-                "unit": rec.unit,
-                "min_value": rec.min_value,
-                "max_value": rec.max_value,
-                "nominal_value": rec.nominal_value,
-                "fault_active": rec.fault_active,
-            })
+            rows.append(
+                {
+                    "timestamp": rec.timestamp,
+                    "industry": rec.industry,
+                    "sensor_name": rec.sensor_name,
+                    "sensor_type": rec.sensor_type,
+                    "value": rec.value,
+                    "unit": rec.unit,
+                    "min_value": rec.min_value,
+                    "max_value": rec.max_value,
+                    "nominal_value": rec.nominal_value,
+                    "fault_active": rec.fault_active,
+                }
+            )
 
         async with self._engine.begin() as conn:
             await conn.execute(self._table.insert(), rows)
 
     async def flush(self) -> None:
-        """No-op – each write() is already committed."""
+        """No-op - each write() is already committed."""
 
     async def close(self) -> None:
         if self._engine:

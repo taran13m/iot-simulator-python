@@ -1,4 +1,4 @@
-"""Cloud IoT sinks – Azure IoT Hub and AWS IoT Core.
+"""Cloud IoT sinks - Azure IoT Hub and AWS IoT Core.
 
 Requires the ``cloud`` extra::
 
@@ -8,14 +8,13 @@ Requires the ``cloud`` extra::
 from __future__ import annotations
 
 import asyncio
-import json
 import logging
 from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
 
-__all__ = ["AzureIoTSink", "AWSIoTSink"]
+__all__ = ["AWSIoTSink", "AzureIoTSink"]
 
 logger = logging.getLogger("iot_simulator.sinks.cloud_iot")
 
@@ -24,8 +23,8 @@ logger = logging.getLogger("iot_simulator.sinks.cloud_iot")
 # ---------------------------------------------------------------------------
 
 try:
-    from azure.iot.device.aio import IoTHubDeviceClient
     from azure.iot.device import Message as AzureMessage
+    from azure.iot.device.aio import IoTHubDeviceClient
 
     AZURE_IOT_AVAILABLE = True
 except ImportError:
@@ -54,8 +53,7 @@ class AzureIoTSink(Sink):
     ) -> None:
         if not AZURE_IOT_AVAILABLE:
             raise ImportError(
-                "azure-iot-device is required for AzureIoTSink.  "
-                "Install with: pip install iot-data-simulator[cloud]"
+                "azure-iot-device is required for AzureIoTSink.  Install with: pip install iot-data-simulator[cloud]"
             )
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._conn_str = connection_string
@@ -80,7 +78,7 @@ class AzureIoTSink(Sink):
             await self._client.send_message(msg)
 
     async def flush(self) -> None:
-        """No-op – messages are sent immediately."""
+        """No-op - messages are sent immediately."""
 
     async def close(self) -> None:
         if self._client:
@@ -111,7 +109,7 @@ class AWSIoTSink(Sink):
         topic: MQTT topic to publish to.
         region: AWS region.
         aws_access_key_id / aws_secret_access_key / aws_session_token:
-            Explicit credentials (optional – falls back to the default
+            Explicit credentials (optional - falls back to the default
             credential chain).
         rate_hz / batch_size / **kwargs: Forwarded to :class:`Sink`.
     """
@@ -130,10 +128,7 @@ class AWSIoTSink(Sink):
         **kwargs,
     ) -> None:
         if not AWS_IOT_AVAILABLE:
-            raise ImportError(
-                "boto3 is required for AWSIoTSink.  "
-                "Install with: pip install iot-data-simulator[cloud]"
-            )
+            raise ImportError("boto3 is required for AWSIoTSink.  Install with: pip install iot-data-simulator[cloud]")
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._endpoint = endpoint
         self._topic = topic
@@ -155,7 +150,7 @@ class AWSIoTSink(Sink):
             "iot-data",
             endpoint_url=f"https://{self._endpoint}",
         )
-        logger.info("AWSIoTSink connected – endpoint=%s topic=%s", self._endpoint, self._topic)
+        logger.info("AWSIoTSink connected - endpoint=%s topic=%s", self._endpoint, self._topic)
 
     async def write(self, records: list[SensorRecord]) -> None:
         if self._client is None:

@@ -1,8 +1,6 @@
-"""Tests for iot_simulator.simulator – Simulator wiring, add_sink, run."""
+"""Tests for iot_simulator.simulator - Simulator wiring, add_sink, run."""
 
 from __future__ import annotations
-
-import asyncio
 
 import pytest
 
@@ -11,7 +9,6 @@ from iot_simulator.sensor_models import SensorConfig, SensorType
 from iot_simulator.simulator import Simulator
 from iot_simulator.sinks.callback import CallbackSink
 from iot_simulator.sinks.console import ConsoleSink
-
 
 # -----------------------------------------------------------------------
 # Construction
@@ -43,8 +40,16 @@ class TestSimulatorConstruction:
         sim = Simulator(industries=["mining"])
         initial = sim.sensor_count
         sim.add_sensors(
-            [SensorConfig(name="extra", sensor_type=SensorType.PRESSURE,
-                          unit="bar", min_value=0, max_value=10, nominal_value=5)],
+            [
+                SensorConfig(
+                    name="extra",
+                    sensor_type=SensorType.PRESSURE,
+                    unit="bar",
+                    min_value=0,
+                    max_value=10,
+                    nominal_value=5,
+                )
+            ],
             industry="extra",
         )
         assert sim.sensor_count == initial + 1

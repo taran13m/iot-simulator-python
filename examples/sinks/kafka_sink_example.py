@@ -22,6 +22,7 @@ import argparse
 def _check_kafka():
     try:
         from iot_simulator.sinks.kafka import KafkaSink  # noqa: F401
+
         return True
     except ImportError:
         print("KafkaSink requires aiokafka. Install with:")
@@ -32,6 +33,7 @@ def _check_kafka():
 # ---------------------------------------------------------------------------
 # Case 1: Compression variants
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Compare different compression algorithms for Kafka messages.
@@ -57,31 +59,37 @@ def run_case_1() -> None:
     sim = Simulator(industries=["mining"], update_rate_hz=2.0)
 
     # Snappy -- fast compression, moderate ratio (recommended default)
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic=f"{TOPIC_PREFIX}-snappy",
-        compression="snappy",
-        rate_hz=2.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic=f"{TOPIC_PREFIX}-snappy",
+            compression="snappy",
+            rate_hz=2.0,
+            batch_size=50,
+        )
+    )
 
     # Gzip -- slower but better compression ratio for bandwidth-constrained links
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic=f"{TOPIC_PREFIX}-gzip",
-        compression="gzip",
-        rate_hz=2.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic=f"{TOPIC_PREFIX}-gzip",
+            compression="gzip",
+            rate_hz=2.0,
+            batch_size=50,
+        )
+    )
 
     # LZ4 -- fastest compression, good for high-throughput pipelines
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic=f"{TOPIC_PREFIX}-lz4",
-        compression="lz4",
-        rate_hz=2.0,
-        batch_size=50,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic=f"{TOPIC_PREFIX}-lz4",
+            compression="lz4",
+            rate_hz=2.0,
+            batch_size=50,
+        )
+    )
 
     print(f"  Publishing to {TOPIC_PREFIX}-{{snappy,gzip,lz4}} on {BOOTSTRAP}")
     sim.run(duration_s=10)
@@ -90,6 +98,7 @@ def run_case_1() -> None:
 # ---------------------------------------------------------------------------
 # Case 2: Key partitioning strategies
 # ---------------------------------------------------------------------------
+
 
 def run_case_2() -> None:
     """Demonstrate different Kafka message key strategies.
@@ -118,34 +127,40 @@ def run_case_2() -> None:
     )
 
     # Key by sensor_name: records for the same sensor always go to the same partition
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic="iot-by-sensor",
-        key_field="sensor_name",
-        compression="snappy",
-        rate_hz=2.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic="iot-by-sensor",
+            key_field="sensor_name",
+            compression="snappy",
+            rate_hz=2.0,
+            batch_size=100,
+        )
+    )
 
     # Key by industry: all mining records go to one partition, utilities to another
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic="iot-by-industry",
-        key_field="industry",
-        compression="snappy",
-        rate_hz=2.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic="iot-by-industry",
+            key_field="industry",
+            compression="snappy",
+            rate_hz=2.0,
+            batch_size=100,
+        )
+    )
 
     # No key: round-robin across all partitions (best throughput distribution)
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic="iot-round-robin",
-        key_field=None,
-        compression="snappy",
-        rate_hz=2.0,
-        batch_size=100,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic="iot-round-robin",
+            key_field=None,
+            compression="snappy",
+            rate_hz=2.0,
+            batch_size=100,
+        )
+    )
 
     print("  Publishing to: iot-by-sensor, iot-by-industry, iot-round-robin")
     sim.run(duration_s=10)
@@ -154,6 +169,7 @@ def run_case_2() -> None:
 # ---------------------------------------------------------------------------
 # Case 3: SASL authentication
 # ---------------------------------------------------------------------------
+
 
 def run_case_3() -> None:
     """Connect to a Kafka cluster with SASL/SSL authentication.
@@ -168,7 +184,7 @@ def run_case_3() -> None:
     if not _check_kafka():
         return
 
-    from iot_simulator import Simulator, SensorConfig, SensorType
+    from iot_simulator import SensorConfig, SensorType, Simulator
     from iot_simulator.sinks.kafka import KafkaSink
 
     print("=== Case 3: SASL authentication ===\n")
@@ -188,18 +204,20 @@ def run_case_3() -> None:
         update_rate_hz=1.0,
     )
 
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic=TOPIC,
-        security_protocol="SASL_SSL",
-        sasl_mechanism="PLAIN",
-        sasl_username=USERNAME,
-        sasl_password=PASSWORD,
-        compression="snappy",
-        acks="all",           # Wait for all replicas to acknowledge
-        rate_hz=1.0,
-        batch_size=20,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic=TOPIC,
+            security_protocol="SASL_SSL",
+            sasl_mechanism="PLAIN",
+            sasl_username=USERNAME,
+            sasl_password=PASSWORD,
+            compression="snappy",
+            acks="all",  # Wait for all replicas to acknowledge
+            rate_hz=1.0,
+            batch_size=20,
+        )
+    )
 
     print(f"  Connecting to {BOOTSTRAP} with SASL_SSL/PLAIN")
     print(f"  Topic: {TOPIC}")
@@ -209,6 +227,7 @@ def run_case_3() -> None:
 # ---------------------------------------------------------------------------
 # Case 4: Extra producer config -- high-throughput tuning
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Fine-tune the Kafka producer for maximum throughput.
@@ -235,19 +254,21 @@ def run_case_4() -> None:
         update_rate_hz=10.0,
     )
 
-    sim.add_sink(KafkaSink(
-        bootstrap_servers=BOOTSTRAP,
-        topic="iot-high-throughput",
-        compression="lz4",         # Fastest compression for throughput
-        key_field="industry",
-        acks=1,                     # Leader-only ack (lower latency)
-        extra_producer_config={
-            "linger_ms": 50,        # Wait up to 50ms to batch messages
-            "max_batch_size": 32768,  # 32KB max batch to broker
-        },
-        rate_hz=5.0,
-        batch_size=200,
-    ))
+    sim.add_sink(
+        KafkaSink(
+            bootstrap_servers=BOOTSTRAP,
+            topic="iot-high-throughput",
+            compression="lz4",  # Fastest compression for throughput
+            key_field="industry",
+            acks=1,  # Leader-only ack (lower latency)
+            extra_producer_config={
+                "linger_ms": 50,  # Wait up to 50ms to batch messages
+                "max_batch_size": 32768,  # 32KB max batch to broker
+            },
+            rate_hz=5.0,
+            batch_size=200,
+        )
+    )
 
     print(f"  Active sensors: {sim.sensor_count}")
     print(f"  Target: ~{sim.sensor_count * 10} records/sec to Kafka")
@@ -258,10 +279,12 @@ def run_case_4() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="KafkaSink examples")
-    parser.add_argument("--case", type=int, default=1, choices=[1, 2, 3, 4],
-                        help="Which example case to run (default: 1)")
+    parser.add_argument(
+        "--case", type=int, default=1, choices=[1, 2, 3, 4], help="Which example case to run (default: 1)"
+    )
     args = parser.parse_args()
 
     cases = {1: run_case_1, 2: run_case_2, 3: run_case_3, 4: run_case_4}

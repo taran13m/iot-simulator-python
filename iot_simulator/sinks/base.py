@@ -1,9 +1,9 @@
 """Sink abstraction layer with per-sink throughput control.
 
 Provides:
-- ``Sink``       – abstract base class that every concrete sink implements.
-- ``SinkConfig`` – per-sink throughput / batching / back-pressure knobs.
-- ``SinkRunner`` – internal async helper that buffers records and drains
+- ``Sink``       - abstract base class that every concrete sink implements.
+- ``SinkConfig`` - per-sink throughput / batching / back-pressure knobs.
+- ``SinkRunner`` - internal async helper that buffers records and drains
                    them to the sink at the configured rate.
 """
 
@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import asyncio
 import collections
+import contextlib
 import logging
 from abc import ABC, abstractmethod
-from typing import Any
 
 from pydantic import BaseModel
 
@@ -27,6 +27,7 @@ logger = logging.getLogger("iot_simulator.sinks")
 # -----------------------------------------------------------------------
 # Throughput configuration
 # -----------------------------------------------------------------------
+
 
 class SinkConfig(BaseModel):
     """Per-sink throughput / batching knobs.
@@ -43,9 +44,9 @@ class SinkConfig(BaseModel):
             Maximum records held in memory.  When exceeded the
             ``backpressure`` policy kicks in.
         backpressure:
-            ``"drop_oldest"`` – discard oldest records when buffer is full.
-            ``"drop_newest"`` – discard incoming records when buffer is full.
-            ``"block"``       – block the producer until space is available.
+            ``"drop_oldest"`` - discard oldest records when buffer is full.
+            ``"drop_newest"`` - discard incoming records when buffer is full.
+            ``"block"``       - block the producer until space is available.
         retry_count:
             How many times to retry a failed ``write()`` call.
         retry_delay_s:
@@ -63,6 +64,7 @@ class SinkConfig(BaseModel):
 # -----------------------------------------------------------------------
 # Sink ABC
 # -----------------------------------------------------------------------
+
 
 class Sink(ABC):
     """Abstract base class for all sinks.
@@ -113,8 +115,9 @@ class Sink(ABC):
 
 
 # -----------------------------------------------------------------------
-# SinkRunner – async buffer + rate limiter (one per registered sink)
+# SinkRunner - async buffer + rate limiter (one per registered sink)
 # -----------------------------------------------------------------------
+
 
 class SinkRunner:
     """Buffers incoming records and drains them to a ``Sink`` according
@@ -158,10 +161,8 @@ class SinkRunner:
         self._stopped = True
         if self._drain_task and not self._drain_task.done():
             self._drain_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._drain_task
-            except asyncio.CancelledError:
-                pass
         # Final drain
         await self._flush_buffer()
         await self.sink.flush()
@@ -173,11 +174,8 @@ class SinkRunner:
         """Background coroutine that drains the buffer at the configured rate."""
         try:
             while not self._stopped:
-                if self.cfg.rate_hz is not None and self.cfg.rate_hz > 0:
-                    interval = 1.0 / self.cfg.rate_hz
-                else:
-                    # No rate limit – drain every 50ms (fast path)
-                    interval = 0.05
+                # No rate limit - drain every 50ms (fast path)
+                interval = 1.0 / self.cfg.rate_hz if self.cfg.rate_hz is not None and self.cfg.rate_hz > 0 else 0.05
 
                 await asyncio.sleep(interval)
                 await self._flush_buffer()
@@ -204,13 +202,19 @@ class SinkRunner:
                 except Exception as exc:
                     if attempt < self.cfg.retry_count:
                         logger.warning(
-                            "%s write failed (attempt %d/%d): %s – retrying in %.1fs",
-                            type(self.sink).__name__, attempt, self.cfg.retry_count,
-                            exc, self.cfg.retry_delay_s,
+                            "%s write failed (attempt %d/%d): %s - retrying in %.1fs",
+                            type(self.sink).__name__,
+                            attempt,
+                            self.cfg.retry_count,
+                            exc,
+                            self.cfg.retry_delay_s,
                         )
                         await asyncio.sleep(self.cfg.retry_delay_s)
                     else:
                         logger.error(
-                            "%s write failed after %d attempts: %s – dropping %d records",
-                            type(self.sink).__name__, self.cfg.retry_count, exc, len(batch),
+                            "%s write failed after %d attempts: %s - dropping %d records",
+                            type(self.sink).__name__,
+                            self.cfg.retry_count,
+                            exc,
+                            len(batch),
                         )

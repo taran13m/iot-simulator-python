@@ -21,12 +21,11 @@ For spark-submit::
 from __future__ import annotations
 
 import argparse
-import sys
-
 
 # ---------------------------------------------------------------------------
 # Case 1: Batch -- defaults (mining industry, 10 ticks)
 # ---------------------------------------------------------------------------
+
 
 def run_case_1() -> None:
     """Simplest batch read: mining industry sensors, 10 ticks.
@@ -36,6 +35,7 @@ def run_case_1() -> None:
       - Default numRows="10"         -> 10 ticks → 160 total rows
     """
     from pyspark.sql import SparkSession
+
     from iot_simulator.pyspark_datasource import IoTSimulatorDataSource
 
     print("=== Case 1: Batch read with defaults ===\n")
@@ -52,6 +52,7 @@ def run_case_1() -> None:
 # Case 2: Batch -- multiple industries + sensor behavior knobs
 # ---------------------------------------------------------------------------
 
+
 def run_case_2() -> None:
     """Batch read with multiple industries and sensor behavior overrides.
 
@@ -63,6 +64,7 @@ def run_case_2() -> None:
       - metadataPaddingBytes="1024"            -> ~1KB padding per record
     """
     from pyspark.sql import SparkSession
+
     from iot_simulator.pyspark_datasource import IoTSimulatorDataSource
 
     print("=== Case 2: Batch read with knobs ===\n")
@@ -93,6 +95,7 @@ def run_case_2() -> None:
 # Case 3: Batch -- load test (many industries, large padding)
 # ---------------------------------------------------------------------------
 
+
 def run_case_3() -> None:
     """High-throughput batch read for stress-testing downstream systems.
 
@@ -107,6 +110,7 @@ def run_case_3() -> None:
     """
     from pyspark.sql import SparkSession
     from pyspark.sql.functions import col, length
+
     from iot_simulator.pyspark_datasource import IoTSimulatorDataSource
 
     print("=== Case 3: Batch load test ===\n")
@@ -135,18 +139,14 @@ def run_case_3() -> None:
     print(f"Distinct sensors: {df.select('sensor_name').distinct().count()}")
 
     # Approximate payload size
-    avg_metadata_len = (
-        df.select(length(col("metadata")).alias("len"))
-        .groupBy()
-        .avg("len")
-        .collect()[0][0]
-    )
+    avg_metadata_len = df.select(length(col("metadata")).alias("len")).groupBy().avg("len").collect()[0][0]
     print(f"Avg metadata field length: {avg_metadata_len:.0f} chars")
 
 
 # ---------------------------------------------------------------------------
 # Case 4: Streaming -- micro-batch (processingTime trigger)
 # ---------------------------------------------------------------------------
+
 
 def run_case_4() -> None:
     """Standard Structured Streaming with processingTime trigger.
@@ -160,6 +160,7 @@ def run_case_4() -> None:
     The stream writes to the console sink and runs for ~30 seconds.
     """
     from pyspark.sql import SparkSession
+
     from iot_simulator.pyspark_datasource import IoTSimulatorDataSource
 
     print("=== Case 4: Streaming (micro-batch) ===\n")
@@ -175,13 +176,7 @@ def run_case_4() -> None:
         .load()
     )
 
-    query = (
-        df.writeStream
-        .format("console")
-        .option("truncate", "false")
-        .trigger(processingTime="5 seconds")
-        .start()
-    )
+    query = df.writeStream.format("console").option("truncate", "false").trigger(processingTime="5 seconds").start()
 
     # Run for 30 seconds then stop
     query.awaitTermination(timeout=30)
@@ -192,6 +187,7 @@ def run_case_4() -> None:
 # ---------------------------------------------------------------------------
 # Case 5: Streaming -- Databricks Real-Time Mode
 # ---------------------------------------------------------------------------
+
 
 def run_case_5() -> None:
     """Structured Streaming with Databricks Real-Time Mode trigger.
@@ -226,6 +222,7 @@ def run_case_5() -> None:
       - https://docs.databricks.com/aws/en/pyspark/datasources
     """
     from pyspark.sql import SparkSession
+
     from iot_simulator.pyspark_datasource import IoTSimulatorDataSource
 
     print("=== Case 5: Streaming (Databricks Real-Time Mode) ===\n")
@@ -246,8 +243,7 @@ def run_case_5() -> None:
     # Real-Time Mode: noop sink, update output mode, realTime trigger.
     # Checkpoint location is required for production; for demo we use /tmp.
     query = (
-        df.writeStream
-        .format("noop")
+        df.writeStream.format("noop")
         .outputMode("update")
         .option("checkpointLocation", "/tmp/iot_simulator_rt_checkpoint")
         .trigger(realTime="5 minutes")
@@ -264,13 +260,17 @@ def run_case_5() -> None:
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main() -> None:
     parser = argparse.ArgumentParser(
         description="PySpark IoT Simulator DataSource examples",
         epilog="Must be run inside a Spark environment (Databricks, spark-submit).",
     )
     parser.add_argument(
-        "--case", type=int, default=1, choices=[1, 2, 3, 4, 5],
+        "--case",
+        type=int,
+        default=1,
+        choices=[1, 2, 3, 4, 5],
         help="Which example case to run (default: 1)",
     )
     args = parser.parse_args()

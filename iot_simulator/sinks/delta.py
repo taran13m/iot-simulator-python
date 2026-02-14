@@ -1,4 +1,4 @@
-"""Delta Lake sink – writes sensor records as Delta Lake tables.
+"""Delta Lake sink - writes sensor records as Delta Lake tables.
 
 Requires the ``delta`` extra::
 
@@ -8,7 +8,6 @@ Requires the ``delta`` extra::
 from __future__ import annotations
 
 import logging
-from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -19,7 +18,7 @@ logger = logging.getLogger("iot_simulator.sinks.delta")
 
 try:
     import pyarrow as pa
-    from deltalake import DeltaTable, write_deltalake
+    from deltalake import write_deltalake
 
     DELTA_AVAILABLE = True
 except ImportError:
@@ -35,18 +34,20 @@ def _get_arrow_schema():
     if _ARROW_SCHEMA is None:
         import pyarrow as pa
 
-        _ARROW_SCHEMA = pa.schema([
-            ("timestamp", pa.float64()),
-            ("industry", pa.string()),
-            ("sensor_name", pa.string()),
-            ("sensor_type", pa.string()),
-            ("value", pa.float64()),
-            ("unit", pa.string()),
-            ("min_value", pa.float64()),
-            ("max_value", pa.float64()),
-            ("nominal_value", pa.float64()),
-            ("fault_active", pa.bool_()),
-        ])
+        _ARROW_SCHEMA = pa.schema(
+            [
+                ("timestamp", pa.float64()),
+                ("industry", pa.string()),
+                ("sensor_name", pa.string()),
+                ("sensor_type", pa.string()),
+                ("value", pa.float64()),
+                ("unit", pa.string()),
+                ("min_value", pa.float64()),
+                ("max_value", pa.float64()),
+                ("nominal_value", pa.float64()),
+                ("fault_active", pa.bool_()),
+            ]
+        )
     return _ARROW_SCHEMA
 
 
@@ -58,7 +59,7 @@ class DeltaSink(Sink):
             Path to the Delta table directory (local filesystem or
             cloud storage URI).
         mode:
-            Write mode – ``"append"`` (default) or ``"overwrite"``.
+            Write mode - ``"append"`` (default) or ``"overwrite"``.
         partition_by:
             Optional list of columns to partition by, e.g.
             ``["industry"]``.
@@ -81,8 +82,7 @@ class DeltaSink(Sink):
     ) -> None:
         if not DELTA_AVAILABLE:
             raise ImportError(
-                "deltalake and pyarrow are required for DeltaSink.  "
-                "Install with: pip install iot-data-simulator[delta]"
+                "deltalake and pyarrow are required for DeltaSink.  Install with: pip install iot-data-simulator[delta]"
             )
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._table_path = table_path
@@ -92,7 +92,9 @@ class DeltaSink(Sink):
 
     async def connect(self) -> None:
         logger.info(
-            "DeltaSink ready – table_path=%s, mode=%s", self._table_path, self._mode,
+            "DeltaSink ready - table_path=%s, mode=%s",
+            self._table_path,
+            self._mode,
         )
 
     async def write(self, records: list[SensorRecord]) -> None:
@@ -123,7 +125,7 @@ class DeltaSink(Sink):
         logger.debug("Wrote %d records to Delta table %s", len(records), self._table_path)
 
     async def flush(self) -> None:
-        """No-op – each write() already commits."""
+        """No-op - each write() already commits."""
 
     async def close(self) -> None:
         logger.info("DeltaSink closed (table_path=%s)", self._table_path)
