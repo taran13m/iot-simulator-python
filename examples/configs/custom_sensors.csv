@@ -1,0 +1,9 @@
+name,sensor_type,unit,min_value,max_value,nominal_value,noise_std,cyclic,cycle_period_seconds,cycle_amplitude
+room_temperature,temperature,°C,15,35,22,0.3,true,3600,0.05
+room_humidity,humidity,%RH,30,70,50,2.0,false,,
+co2_level,level,ppm,400,2000,600,15.0,false,,
+light_intensity,level,lux,0,1000,500,30.0,true,43200,0.3
+occupancy_count,level,people,0,50,20,2.0,true,86400,0.4
+hvac_supply_temp,temperature,°C,12,18,15,0.5,true,1800,0.1
+hvac_return_temp,temperature,°C,19,25,22,0.5,true,1800,0.1
+air_pressure,pressure,Pa,95000,105000,101325,50.0,false,,
