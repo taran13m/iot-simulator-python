@@ -2,8 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/),
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [0.1.0] - 2025-02-15
+## [Unreleased]
+
+## [0.1.0] - 2026-02-15
 
 ### Added
 
@@ -17,4 +21,5 @@ All notable changes to this project will be documented in this file.
 - **PySpark DataSource V2** integration for Spark-native streaming.
 - **Extensible sink architecture**: subclass `Sink` to write your own, register it for YAML use.
 
+[Unreleased]: https://github.com/taran13m/iot-simulator-python/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/taran13m/iot-simulator-python/releases/tag/v0.1.0

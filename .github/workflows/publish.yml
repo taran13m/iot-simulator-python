@@ -5,13 +5,14 @@ name: Publish to PyPI
 #   2. package - builds sdist + wheel, verifies with twine
 #   3. testpypi - publishes to TestPyPI for validation
 #   4. pypi     - publishes to production PyPI (requires testpypi to pass)
+#   5. release  - creates a GitHub Release with changelog notes and attached artifacts
 #
 # One-time setup (do this BEFORE the first release):
 #
 # 1. TestPyPI (https://test.pypi.org/manage/account/publishing/)
 #    Add a pending publisher:
 #      PyPI project name:  iot-data-simulator
-#      Owner:              <your-github-username-or-org>
+#      Owner:              taran13m
 #      Repository:         iot-simulator-python
 #      Workflow name:      publish.yml
 #      Environment name:   testpypi
@@ -19,7 +20,7 @@ name: Publish to PyPI
 # 2. PyPI (https://pypi.org/manage/account/publishing/)
 #    Add a pending publisher:
 #      PyPI project name:  iot-data-simulator
-#      Owner:              <your-github-username-or-org>
+#      Owner:              taran13m
 #      Repository:         iot-simulator-python
 #      Workflow name:      publish.yml
 #      Environment name:   pypi
@@ -131,3 +132,50 @@ jobs:
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  release:
+    name: Create GitHub Release
+    needs: pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          NOTES=$(python3 -c "
+          import re, sys
+          text = open('CHANGELOG.md').read()
+          pattern = rf'## \[{re.escape(sys.argv[1])}\].*?\n(.*?)(?=\n## \[|$)'
+          match = re.search(pattern, text, re.DOTALL)
+          print(match.group(1).strip() if match else 'Release $VERSION')
+          " "$VERSION")
+          {
+            echo "notes<<CHANGELOG_EOF"
+            echo "$NOTES"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "$GITHUB_REF_NAME" \
+            --notes "${{ steps.changelog.outputs.notes }}"
