@@ -22,16 +22,6 @@ __all__ = ["create_sink", "register_sink"]
 
 logger = logging.getLogger("iot_simulator.sinks.factory")
 
-# Throughput keys that should be extracted before passing to the sink constructor
-_THROUGHPUT_KEYS = {
-    "rate_hz",
-    "batch_size",
-    "max_buffer_size",
-    "backpressure",
-    "retry_count",
-    "retry_delay_s",
-}
-
 # Registry of type names → (module_path, class_name)
 _SINK_REGISTRY: dict[str, tuple[str, str]] = {
     "console": ("iot_simulator.sinks.console", "ConsoleSink"),

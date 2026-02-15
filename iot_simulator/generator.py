@@ -185,7 +185,15 @@ class DataGenerator:
                 if row.get("cycle_amplitude"):
                     kwargs["cycle_amplitude"] = float(row["cycle_amplitude"])
 
-                sensors.append(SensorConfig(name, sensor_type, unit, min_val, max_val, nominal, **kwargs))
+                sensors.append(SensorConfig(
+                    name=name,
+                    sensor_type=sensor_type,
+                    unit=unit,
+                    min_value=min_val,
+                    max_value=max_val,
+                    nominal_value=nominal,
+                    **kwargs,
+                ))
 
         gen = cls(update_rate_hz=update_rate_hz)
         gen.add_sensors(sensors, industry=industry)

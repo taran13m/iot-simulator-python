@@ -36,21 +36,23 @@ class TestSensorConfig:
         assert cfg.noise_std == pytest.approx(0.01)
         assert cfg.cyclic is False
 
-    def test_positional_construction(self) -> None:
-        """Positional args must work for backward compat with INDUSTRY_SENSORS."""
-        cfg = SensorConfig("s1", SensorType.PRESSURE, "bar", 0, 10, 5, 0.05)
+    def test_keyword_construction_with_optional_fields(self) -> None:
+        cfg = SensorConfig(
+            name="s1", sensor_type=SensorType.PRESSURE, unit="bar",
+            min_value=0, max_value=10, nominal_value=5, noise_std=0.05,
+        )
         assert cfg.name == "s1"
         assert cfg.noise_std == pytest.approx(0.05)
 
-    def test_positional_with_keyword_mix(self) -> None:
+    def test_keyword_construction_with_cyclic(self) -> None:
         cfg = SensorConfig(
-            "s1",
-            SensorType.SPEED,
-            "RPM",
-            0,
-            3000,
-            1500,
-            10,
+            name="s1",
+            sensor_type=SensorType.SPEED,
+            unit="RPM",
+            min_value=0,
+            max_value=3000,
+            nominal_value=1500,
+            noise_std=10,
             cyclic=True,
             cycle_period_seconds=120,
         )
