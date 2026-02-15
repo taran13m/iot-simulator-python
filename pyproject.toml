@@ -32,6 +32,8 @@ dependencies = [
 [project.urls]
 Homepage = "https://github.com/taran13m/iot-simulator-python"
 Repository = "https://github.com/taran13m/iot-simulator-python"
+Documentation = "https://github.com/taran13m/iot-simulator-python#readme"
+Changelog = "https://github.com/taran13m/iot-simulator-python/blob/main/CHANGELOG.md"
 "Bug Tracker" = "https://github.com/taran13m/iot-simulator-python/issues"
 
 [project.optional-dependencies]
@@ -66,9 +68,17 @@ iot-simulator = "iot_simulator.__main__:main"
 [tool.setuptools.packages.find]
 include = ["iot_simulator*"]
 
-[tool.black]
-line-length = 120
-target-version = ["py312"]
+[tool.bumpver]
+current_version = "0.1.0"
+version_pattern = "MAJOR.MINOR.PATCH"
+commit_message = "Bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = false
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = ['current_version = "{version}"', 'version = "{version}"']
+"iot_simulator/__init__.py" = ['__version__ = "{version}"']
 
 [tool.ruff]
 line-length = 120
