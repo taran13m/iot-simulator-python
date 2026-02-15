@@ -7,7 +7,7 @@ name = "iot-data-simulator"
 version = "0.1.0"
 description = "Generate realistic industrial IoT sensor data and push to pluggable sinks."
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 authors = [{name = "IoT Simulator Contributors"}]
 keywords = ["iot", "simulator", "sensor", "data-generator", "industrial", "kafka", "delta-lake"]
@@ -15,7 +15,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -51,6 +50,7 @@ dev = [
     "pytest-mock>=3.12",
     "ruff>=0.4",
     "mypy>=1.8",
+    "types-PyYAML>=6.0",
     "bumpver>=2023.1129",
 ]
 all = [
@@ -97,6 +97,21 @@ python_version = "3.12"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pyspark.*",
+    "aiokafka.*",
+    "pyarrow.*",
+    "deltalake.*",
+    "sqlalchemy.*",
+    "azure.*",
+    "boto3.*",
+    "httpx.*",
+    "zerobus.*",
+    "databricks.*",
+]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
