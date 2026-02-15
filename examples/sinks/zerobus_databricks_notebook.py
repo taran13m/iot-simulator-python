@@ -4,11 +4,14 @@
 # MAGIC
 # MAGIC End-to-end notebook that:
 # MAGIC 1. Installs the IoT simulator package
-# MAGIC 2. Configures credentials (secret scope **or** plain variables)
-# MAGIC 3. Creates the target Delta table with the correct schema
+# MAGIC 2. Configures credentials and simulator knobs via **widgets**
+# MAGIC 3. Creates the target Delta table using the **auto-detected schema**
 # MAGIC 4. Grants permissions to the service principal
 # MAGIC 5. Streams simulated sensor data via ZeroBus with **live metrics**
 # MAGIC 6. Queries the table to verify data landed
+# MAGIC
+# MAGIC All configuration is driven by the widget bar at the top of the notebook.
+# MAGIC Change industries, record type, duration, etc. without editing any code.
 
 # COMMAND ----------
 
@@ -18,96 +21,98 @@ dbutils.library.restartPython()
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ## Configuration
-# MAGIC
-# MAGIC Run **either** the next cell (dbutils.secrets) **or** the one after it (plain variables).
-# MAGIC Do not run both.
+# ------------------------------------------------------------------
+# Widgets -- configure everything from the widget bar
+# ------------------------------------------------------------------
+
+# Credentials
+dbutils.widgets.text("server_endpoint",
+                     "1234567890123456.zerobus.us-west-2.cloud.databricks.com",
+                     "ZeroBus Server Endpoint")
+dbutils.widgets.text("table_name",
+                     "catalog.schema.sensor_data",
+                     "Target Table (catalog.schema.table)")
+dbutils.widgets.text("secret_scope",
+                     "iot-simulator",
+                     "Secret Scope")
+
+# Simulator knobs
+dbutils.widgets.text("industries",
+                     "mining",
+                     "Industries (comma-separated, or 'custom')")
+dbutils.widgets.text("custom_sensors_json",
+                     '[{"name":"temp_1","sensor_type":"temperature","unit":"C","min_value":15,"max_value":35,"nominal_value":22},'
+                     '{"name":"pressure_1","sensor_type":"pressure","unit":"bar","min_value":2,"max_value":8,"nominal_value":5},'
+                     '{"name":"flow_1","sensor_type":"flow","unit":"LPM","min_value":100,"max_value":500,"nominal_value":300}]',
+                     "Custom Sensors JSON (used when industries='custom')")
+dbutils.widgets.dropdown("record_type", "json", ["json", "proto"], "Record Type")
+dbutils.widgets.text("duration_s", "30", "Duration (seconds)")
+dbutils.widgets.text("rate_hz", "1.0", "Sink Rate (Hz)")
+dbutils.widgets.text("batch_size", "100", "Batch Size")
+
+print("Widgets created. Configure values in the widget bar above.")
 
 # COMMAND ----------
 
-# --- Option A: Credentials from a Databricks secret scope (recommended) ---
+# ------------------------------------------------------------------
+# Read widget values and resolve credentials
+# ------------------------------------------------------------------
 
-SERVER_ENDPOINT = "1234567890123456.zerobus.us-west-2.cloud.databricks.com"  # replace
-TABLE_NAME      = "catalog.schema.sensor_data"                               # replace
-SECRET_SCOPE    = "iot-simulator"                                            # replace
+SERVER_ENDPOINT = dbutils.widgets.get("server_endpoint")
+TABLE_NAME      = dbutils.widgets.get("table_name")
+SECRET_SCOPE    = dbutils.widgets.get("secret_scope")
+INDUSTRIES_STR  = dbutils.widgets.get("industries")
+RECORD_TYPE     = dbutils.widgets.get("record_type")
+DURATION_S      = int(dbutils.widgets.get("duration_s"))
+RATE_HZ         = float(dbutils.widgets.get("rate_hz"))
+BATCH_SIZE      = int(dbutils.widgets.get("batch_size"))
 
+# Workspace URL from notebook context
 WORKSPACE_URL = spark.conf.get("spark.databricks.workspaceUrl")
 if not WORKSPACE_URL.startswith("https://"):
     WORKSPACE_URL = f"https://{WORKSPACE_URL}"
 
+# Credentials from secret scope
 CLIENT_ID     = dbutils.secrets.get(scope=SECRET_SCOPE, key="client-id")
 CLIENT_SECRET = dbutils.secrets.get(scope=SECRET_SCOPE, key="client-secret")
 
-print(f"Workspace : {WORKSPACE_URL}")
-print(f"Endpoint  : {SERVER_ENDPOINT}")
-print(f"Table     : {TABLE_NAME}")
-print(f"Auth      : dbutils.secrets (scope={SECRET_SCOPE})")
-
-# COMMAND ----------
-
-# --- Option B: Plain variables (skip the cell above and uncomment below) ---
-
-# SERVER_ENDPOINT = "1234567890123456.zerobus.us-west-2.cloud.databricks.com"
-# TABLE_NAME      = "catalog.schema.sensor_data"
-# WORKSPACE_URL   = "https://my-workspace.cloud.databricks.com"
-# CLIENT_ID       = "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-# CLIENT_SECRET   = "your-client-secret-here"
-#
-# print(f"Workspace : {WORKSPACE_URL}")
-# print(f"Endpoint  : {SERVER_ENDPOINT}")
-# print(f"Table     : {TABLE_NAME}")
-# print(f"Auth      : plain variables")
+print(f"Workspace   : {WORKSPACE_URL}")
+print(f"Endpoint    : {SERVER_ENDPOINT}")
+print(f"Table       : {TABLE_NAME}")
+print(f"Industries  : {INDUSTRIES_STR}")
+print(f"Record type : {RECORD_TYPE}")
+print(f"Duration    : {DURATION_S}s")
+print(f"Rate        : {RATE_HZ} Hz")
+print(f"Batch size  : {BATCH_SIZE}")
+print(f"Auth        : dbutils.secrets (scope={SECRET_SCOPE})")
 
 # COMMAND ----------
 
 # MAGIC %md
 # MAGIC ## Create the target table
 # MAGIC
-# MAGIC The schema is derived from `SensorRecord.model_fields` and the DDL
-# MAGIC string used by the PySpark DataSource.  Running this cell is
-# MAGIC idempotent (`CREATE TABLE IF NOT EXISTS`).
+# MAGIC The schema is imported directly from the package (`_SCHEMA`).  It is
+# MAGIC always in sync with `SensorRecord` and works for **every** sensor
+# MAGIC configuration -- built-in industries, custom sensors, load tests,
+# MAGIC JSON, and Proto all produce the same 11-column rows.
 
 # COMMAND ----------
 
-from iot_simulator.models import SensorRecord
+from iot_simulator.pyspark_datasource import _SCHEMA
 
-# Show the SensorRecord fields for reference
-print("SensorRecord fields:")
-for name, field_info in SensorRecord.model_fields.items():
-    print(f"  {name:20s}  {field_info.annotation.__name__ if hasattr(field_info.annotation, '__name__') else str(field_info.annotation)}")
+print(f"Schema (from iot_simulator.pyspark_datasource._SCHEMA):\n  {_SCHEMA}\n")
 
-# Build and execute the CREATE TABLE statement
-catalog, schema_name, table_short = TABLE_NAME.split(".")
-
-create_sql = f"""
-CREATE TABLE IF NOT EXISTS {TABLE_NAME} (
-    sensor_name    STRING    COMMENT 'Sensor identifier, e.g. crusher_1_motor_power',
-    industry       STRING    COMMENT 'Grouping label, e.g. mining',
-    value          DOUBLE    COMMENT 'Current sensor reading',
-    unit           STRING    COMMENT 'Engineering unit, e.g. kW or degC',
-    sensor_type    STRING    COMMENT 'Sensor category, e.g. power, temperature',
-    timestamp      DOUBLE    COMMENT 'Unix epoch seconds when the value was generated',
-    min_value      DOUBLE    COMMENT 'Physical minimum of the sensor range',
-    max_value      DOUBLE    COMMENT 'Physical maximum of the sensor range',
-    nominal_value  DOUBLE    COMMENT 'Expected steady-state value',
-    fault_active   BOOLEAN   COMMENT 'True when the simulator injected a fault',
-    metadata       STRING    COMMENT 'JSON-encoded dict of optional tags'
-)
-USING DELTA
-COMMENT 'IoT simulator sensor data ingested via ZeroBus'
-"""
-
-print(f"\n{create_sql}")
+create_sql = f"CREATE TABLE IF NOT EXISTS {TABLE_NAME} ({_SCHEMA}) USING DELTA"
+print(create_sql)
 spark.sql(create_sql)
-print(f"Table {TABLE_NAME} is ready.")
+print(f"\nTable {TABLE_NAME} is ready.")
 
 # COMMAND ----------
 
 # Grant Unity Catalog permissions to the service principal so ZeroBus can
 # write to the table.  These are idempotent -- safe to re-run.
 
-catalog, schema_name, table_short = TABLE_NAME.split(".")
+catalog, schema_name, _table_short = TABLE_NAME.split(".")
 
 grants = [
     f"GRANT USE CATALOG ON CATALOG `{catalog}` TO `{CLIENT_ID}`",
@@ -204,11 +209,29 @@ class MetricsZerobusSink(ZerobusSink):
 
 # COMMAND ----------
 
+# ------------------------------------------------------------------
+# Build the Simulator from widget values and run
+# ------------------------------------------------------------------
+
+import json as _json
+
 from iot_simulator import Simulator
 
-DURATION_S = 30  # seconds to run the simulation
+if INDUSTRIES_STR.strip().lower() == "custom":
+    from iot_simulator import SensorConfig, SensorType
 
-sim = Simulator(industries=["mining"], update_rate_hz=2.0)
+    raw_sensors = _json.loads(dbutils.widgets.get("custom_sensors_json"))
+    custom_sensors = [SensorConfig(**s) for s in raw_sensors]
+    sim = Simulator(
+        custom_sensors=custom_sensors,
+        custom_industry="custom",
+        update_rate_hz=2.0,
+    )
+    print(f"Simulator: {len(custom_sensors)} custom sensors")
+else:
+    industries = [s.strip() for s in INDUSTRIES_STR.split(",") if s.strip()]
+    sim = Simulator(industries=industries, update_rate_hz=2.0)
+    print(f"Simulator: industries={industries}  ({sim.sensor_count} sensors)")
 
 sim.add_sink(
     MetricsZerobusSink(
@@ -217,13 +240,13 @@ sim.add_sink(
         workspace_url=WORKSPACE_URL,
         client_id=CLIENT_ID,
         client_secret=CLIENT_SECRET,
-        record_type="json",
-        rate_hz=1.0,
-        batch_size=100,
+        record_type=RECORD_TYPE,
+        rate_hz=RATE_HZ,
+        batch_size=BATCH_SIZE,
     )
 )
 
-print(f"Starting simulation for {DURATION_S}s ...\n")
+print(f"\nStarting simulation for {DURATION_S}s (record_type={RECORD_TYPE}) ...\n")
 sim.run(duration_s=DURATION_S)
 
 # COMMAND ----------
@@ -239,11 +262,11 @@ display(spark.sql(f"SELECT * FROM {TABLE_NAME} ORDER BY timestamp DESC LIMIT 20"
 
 df_stats = spark.sql(f"""
     SELECT
-        COUNT(*)                   AS total_rows,
+        COUNT(*)                    AS total_rows,
         COUNT(DISTINCT sensor_name) AS distinct_sensors,
-        COUNT(DISTINCT industry)   AS distinct_industries,
-        MIN(timestamp)             AS earliest_ts,
-        MAX(timestamp)             AS latest_ts,
+        COUNT(DISTINCT industry)    AS distinct_industries,
+        MIN(timestamp)              AS earliest_ts,
+        MAX(timestamp)              AS latest_ts,
         SUM(CASE WHEN fault_active THEN 1 ELSE 0 END) AS fault_count
     FROM {TABLE_NAME}
 """)
