@@ -12,13 +12,7 @@ from __future__ import annotations
 import math
 import random
 import time
-try:
-    from enum import StrEnum
-except ImportError:  # Python < 3.11
-    from enum import Enum
-
-    class StrEnum(str, Enum):  # type: ignore[no-redef]
-        """Minimal backport of ``enum.StrEnum`` for Python 3.10."""
+from enum import StrEnum
 
 from pydantic import BaseModel
 
