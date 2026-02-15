@@ -38,8 +38,13 @@ class TestSensorConfig:
 
     def test_keyword_construction_with_optional_fields(self) -> None:
         cfg = SensorConfig(
-            name="s1", sensor_type=SensorType.PRESSURE, unit="bar",
-            min_value=0, max_value=10, nominal_value=5, noise_std=0.05,
+            name="s1",
+            sensor_type=SensorType.PRESSURE,
+            unit="bar",
+            min_value=0,
+            max_value=10,
+            nominal_value=5,
+            noise_std=0.05,
         )
         assert cfg.name == "s1"
         assert cfg.noise_std == pytest.approx(0.05)

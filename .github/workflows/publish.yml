@@ -1,9 +1,10 @@
 name: Publish to PyPI
 
 # Triggered on version tags (v*). The pipeline:
-#   1. build    - runs tests, lint, builds sdist + wheel, verifies with twine
-#   2. testpypi - publishes to TestPyPI for validation
-#   3. pypi     - publishes to production PyPI (requires testpypi to pass)
+#   1. verify  - runs lint, format check, tests with coverage
+#   2. package - builds sdist + wheel, verifies with twine
+#   3. testpypi - publishes to TestPyPI for validation
+#   4. pypi     - publishes to production PyPI (requires testpypi to pass)
 #
 # One-time setup (do this BEFORE the first release):
 #
@@ -33,7 +34,8 @@ on:
       - "v*"
 
 jobs:
-  build:
+  verify:
+    name: Lint & Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -44,20 +46,43 @@ jobs:
           python-version: "3.12"
 
       - uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
 
       - name: Install dependencies
         run: |
           uv venv .venv
-          uv pip install -r requirements.txt
-
-      - name: Install dev and build tools
-        run: uv pip install pytest pytest-cov pytest-asyncio ruff build twine
+          uv pip install -e ".[dev]"
 
       - name: Lint with ruff
         run: uv run ruff check iot_simulator tests
 
+      - name: Check formatting
+        run: uv run ruff format --check iot_simulator tests
+
       - name: Run tests with coverage
         run: uv run pytest --cov=iot_simulator --cov-fail-under=90 -q
+
+  package:
+    name: Build & Verify Package
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: astral-sh/setup-uv@v1
+        with:
+          enable-cache: true
+
+      - name: Install build tools
+        run: |
+          uv venv .venv
+          uv pip install build twine
 
       - name: Build sdist and wheel
         run: uv run python -m build
@@ -72,7 +97,8 @@ jobs:
           path: dist/
 
   testpypi:
-    needs: build
+    name: Publish to TestPyPI
+    needs: package
     runs-on: ubuntu-latest
     environment: testpypi
     permissions:
@@ -90,6 +116,7 @@ jobs:
           repository-url: https://test.pypi.org/legacy/
 
   pypi:
+    name: Publish to PyPI
     needs: testpypi
     runs-on: ubuntu-latest
     environment: pypi
