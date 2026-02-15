@@ -8,6 +8,7 @@ import asyncio
 import contextlib
 import logging
 import signal
+import threading
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
@@ -121,14 +122,42 @@ class Simulator:
     def run(self, duration_s: float | None = None) -> None:
         """Blocking entry point - starts the event loop.
 
+        Works transparently inside environments that already have a running
+        event loop (Databricks notebooks, Jupyter, IPython) by spawning a
+        dedicated background thread with its own loop.
+
         Parameters:
             duration_s: If provided, stop automatically after this many
                         seconds.  ``None`` means run until Ctrl-C.
         """
         try:
-            asyncio.run(self.run_async(duration_s=duration_s))
-        except KeyboardInterrupt:
-            logger.info("Interrupted by user")
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+
+        if loop is not None and loop.is_running():
+            # Inside an existing event loop (Databricks notebook, Jupyter, IPython).
+            # Spawn a dedicated thread so asyncio.run() gets its own loop.
+            exc: list[BaseException | None] = [None]
+
+            def _target() -> None:
+                try:
+                    asyncio.run(self.run_async(duration_s=duration_s))
+                except KeyboardInterrupt:
+                    logger.info("Interrupted by user")
+                except BaseException as e:
+                    exc[0] = e
+
+            t = threading.Thread(target=_target, daemon=True)
+            t.start()
+            t.join()
+            if exc[0] is not None:
+                raise exc[0]
+        else:
+            try:
+                asyncio.run(self.run_async(duration_s=duration_s))
+            except KeyboardInterrupt:
+                logger.info("Interrupted by user")
 
     async def run_async(self, duration_s: float | None = None) -> None:
         """Async entry point - runs inside an existing event loop."""
@@ -151,11 +180,13 @@ class Simulator:
         interval = 1.0 / self._update_rate_hz
         start_time = asyncio.get_event_loop().time()
 
-        # Install signal handlers for graceful shutdown
+        # Install signal handlers for graceful shutdown.
+        # NotImplementedError: raised on Windows where signal handlers are unsupported.
+        # RuntimeError: raised when running in a non-main thread (e.g. notebook env).
         loop = asyncio.get_running_loop()
         stop_event = asyncio.Event()
         for sig in (signal.SIGINT, signal.SIGTERM):
-            with contextlib.suppress(NotImplementedError):
+            with contextlib.suppress(NotImplementedError, RuntimeError):
                 loop.add_signal_handler(sig, stop_event.set)
 
         try:
