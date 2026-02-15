@@ -11,6 +11,7 @@ For PostgreSQL use ``asyncpg``; for SQLite use ``aiosqlite``.
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -50,7 +51,7 @@ class DatabaseSink(Sink):
         table: str = "sensor_data",
         rate_hz: float | None = None,
         batch_size: int = 200,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not SQLALCHEMY_AVAILABLE:
             raise ImportError(

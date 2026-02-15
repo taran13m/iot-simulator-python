@@ -14,7 +14,7 @@ Used by the config-driven (YAML) mode to instantiate sinks declaratively::
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from iot_simulator.sinks.base import Sink
 
@@ -76,7 +76,7 @@ def create_sink(config: dict[str, Any]) -> Sink:
     cls = getattr(module, class_name)
 
     logger.debug("Creating %s with config: %s", class_name, config)
-    return cls(**config)
+    return cast(Sink, cls(**config))
 
 
 def register_sink(name: str, module_path: str, class_name: str) -> None:

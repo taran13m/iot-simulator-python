@@ -59,7 +59,7 @@ class KafkaSink(Sink):
         extra_producer_config: dict[str, Any] | None = None,
         rate_hz: float | None = None,
         batch_size: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not KAFKA_AVAILABLE:
             raise ImportError(

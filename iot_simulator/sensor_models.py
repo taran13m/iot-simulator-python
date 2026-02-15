@@ -150,7 +150,7 @@ class SensorSimulator:
         """Get current sensor value."""
         return self.current_value
 
-    def inject_fault(self, duration_seconds: float = 10.0):
+    def inject_fault(self, duration_seconds: float = 10.0) -> None:
         """Manually inject a fault condition."""
         self.fault_active = True
         self.fault_end_time = time.time() + duration_seconds

@@ -6,7 +6,7 @@ Useful for debugging, demos, and verifying the pipeline is working.
 from __future__ import annotations
 
 import sys
-from typing import IO
+from typing import IO, Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -32,7 +32,7 @@ class ConsoleSink(Sink):
         stream: IO[str] | None = None,
         rate_hz: float | None = None,
         batch_size: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._fmt = fmt

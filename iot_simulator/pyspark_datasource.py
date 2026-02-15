@@ -122,7 +122,7 @@ def _parse_sensor_overrides(options: dict[str, str]) -> dict[str, Any]:
     return overrides
 
 
-def _build_generator(options: dict[str, str]):
+def _build_generator(options: dict[str, str]) -> tuple[dict[str, tuple[str, Any]], int]:
     """Construct a ``DataGenerator`` from data-source options.
 
     This function is intentionally called inside ``read()`` — *not* in a
@@ -163,14 +163,14 @@ def _build_generator(options: dict[str, str]):
 def _tick_to_rows(
     simulators: dict[str, tuple[str, Any]],
     padding_bytes: int,
-) -> list[tuple]:
+) -> list[tuple[Any, ...]]:
     """Run one tick across all simulators and return a list of Row tuples."""
     import time as _time
 
     from iot_simulator.sensor_models import SensorType
 
     now = _time.time()
-    rows: list[tuple] = []
+    rows: list[tuple[Any, ...]] = []
     padding = "x" * padding_bytes if padding_bytes > 0 else ""
 
     for _key, (industry, sim) in simulators.items():
@@ -205,7 +205,7 @@ def _tick_to_rows(
 # -----------------------------------------------------------------------
 
 
-class IoTSimulatorDataSource(DataSource):
+class IoTSimulatorDataSource(DataSource):  # type: ignore[misc]
     """PySpark custom data source backed by the IoT Data Simulator.
 
     Register once, then use via ``spark.read`` / ``spark.readStream``::
@@ -249,10 +249,10 @@ class IoTSimulatorDataSource(DataSource):
     def schema(self) -> str:
         return _SCHEMA
 
-    def reader(self, schema: StructType):
+    def reader(self, schema: StructType) -> IoTSimulatorBatchReader:
         return IoTSimulatorBatchReader(schema, self.options)
 
-    def streamReader(self, schema: StructType):
+    def streamReader(self, schema: StructType) -> IoTSimulatorStreamReader:
         return IoTSimulatorStreamReader(schema, self.options)
 
 
@@ -261,7 +261,7 @@ class IoTSimulatorDataSource(DataSource):
 # -----------------------------------------------------------------------
 
 
-class IoTSimulatorBatchReader(DataSourceReader):
+class IoTSimulatorBatchReader(DataSourceReader):  # type: ignore[misc]
     """Reads a fixed number of ticks from the IoT simulator (batch mode).
 
     The number of ticks is controlled by the ``numRows`` option.  Each tick
@@ -274,7 +274,7 @@ class IoTSimulatorBatchReader(DataSourceReader):
         self.options = options
         self.num_ticks = int(options.get("numRows", "10"))
 
-    def read(self, partition) -> Iterator[tuple]:
+    def read(self, partition: Any) -> Iterator[tuple[Any, ...]]:
         """Yield rows for the batch read.
 
         ``DataGenerator`` is constructed here (not in ``__init__``) because
@@ -292,7 +292,7 @@ class IoTSimulatorBatchReader(DataSourceReader):
 # -----------------------------------------------------------------------
 
 
-class _RangePartition(InputPartition):
+class _RangePartition(InputPartition):  # type: ignore[misc]
     """Describes a contiguous range of ticks for a single partition."""
 
     def __init__(self, start: int, end: int) -> None:
@@ -300,7 +300,7 @@ class _RangePartition(InputPartition):
         self.end = end
 
 
-class IoTSimulatorStreamReader(DataSourceStreamReader):
+class IoTSimulatorStreamReader(DataSourceStreamReader):  # type: ignore[misc]
     """Streaming reader that produces IoT sensor data in micro-batches.
 
     Each micro-batch advances an internal offset by ``rowsPerBatch`` ticks.
@@ -314,24 +314,24 @@ class IoTSimulatorStreamReader(DataSourceStreamReader):
         self.rows_per_batch = int(options.get("rowsPerBatch", "2"))
         self.current = 0
 
-    def initialOffset(self) -> dict:
+    def initialOffset(self) -> dict[str, int]:
         """Return the initial start offset of the reader."""
         return {"offset": 0}
 
-    def latestOffset(self) -> dict:
+    def latestOffset(self) -> dict[str, int]:
         """Return the latest offset for the next micro-batch."""
         self.current += self.rows_per_batch
         return {"offset": self.current}
 
-    def partitions(self, start: dict, end: dict) -> list[InputPartition]:
+    def partitions(self, start: dict[str, int], end: dict[str, int]) -> list[InputPartition]:
         """Plan partitions for the current micro-batch."""
         return [_RangePartition(start["offset"], end["offset"])]
 
-    def commit(self, end: dict) -> None:
+    def commit(self, end: dict[str, int]) -> None:
         """Called when Spark has finished processing data up to *end*."""
         pass
 
-    def read(self, partition) -> Iterator[tuple]:
+    def read(self, partition: Any) -> Iterator[tuple[Any, ...]]:
         """Generate rows for a single partition (range of ticks).
 
         ``DataGenerator`` is constructed here (not in ``__init__``) because

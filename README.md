@@ -2,7 +2,7 @@
 
 **`iot-data-simulator`** -- Generate realistic industrial IoT sensor data and push it to pluggable sinks with per-sink throughput control.
 
-![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue)
+![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License: MIT](https://img.shields.io/badge/license-MIT-green)
 ![Version: 0.1.0](https://img.shields.io/badge/version-0.1.0-orange)
 

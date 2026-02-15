@@ -37,7 +37,7 @@ class CallbackSink(Sink):
         *,
         rate_hz: float | None = None,
         batch_size: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._callback = callback

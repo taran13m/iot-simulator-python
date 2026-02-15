@@ -49,7 +49,7 @@ class AzureIoTSink(Sink):
         content_type: str = "application/json",
         rate_hz: float | None = None,
         batch_size: int = 50,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not AZURE_IOT_AVAILABLE:
             raise ImportError(
@@ -125,7 +125,7 @@ class AWSIoTSink(Sink):
         aws_session_token: str | None = None,
         rate_hz: float | None = None,
         batch_size: int = 50,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not AWS_IOT_AVAILABLE:
             raise ImportError("boto3 is required for AWSIoTSink.  Install with: pip install iot-data-simulator[cloud]")
@@ -161,7 +161,7 @@ class AWSIoTSink(Sink):
             payload = rec.to_json().encode()
             await loop.run_in_executor(
                 None,
-                lambda p=payload: self._client.publish(  # type: ignore[union-attr]
+                lambda p=payload: self._client.publish(
                     topic=self._topic,
                     qos=1,
                     payload=p,

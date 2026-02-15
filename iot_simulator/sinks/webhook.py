@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import logging
+from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -45,7 +46,7 @@ class WebhookSink(Sink):
         timeout_s: float = 30.0,
         rate_hz: float | None = None,
         batch_size: int = 100,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not HTTPX_AVAILABLE:
             raise ImportError(

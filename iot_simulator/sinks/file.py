@@ -62,14 +62,14 @@ class FileSink(Sink):
         rotation: str | None = None,
         rate_hz: float | None = None,
         batch_size: int = 500,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         super().__init__(rate_hz=rate_hz, batch_size=batch_size, **kwargs)
         self._dir = Path(path)
         self._format = format.lower()
         self._rotation_s = _parse_rotation(rotation)
-        self._current_file: io.TextIOWrapper | io.BufferedWriter | None = None
-        self._csv_writer: csv.DictWriter | None = None
+        self._current_file: io.TextIOWrapper[Any] | io.BufferedWriter | None = None
+        self._csv_writer: csv.DictWriter[str] | None = None
         self._file_start_time: float = 0.0
         self._record_buffer: list[dict[str, Any]] = []  # for parquet batching
 
@@ -151,7 +151,7 @@ class FileSink(Sink):
     ]
 
     def _write_csv(self, records: list[SensorRecord]) -> None:
-        if self._current_file is None:
+        if self._current_file is None or isinstance(self._current_file, io.BufferedWriter):
             return
         if self._csv_writer is None:
             self._csv_writer = csv.DictWriter(
@@ -167,7 +167,7 @@ class FileSink(Sink):
     # --- JSON Lines ---
 
     def _write_json(self, records: list[SensorRecord]) -> None:
-        if self._current_file is None:
+        if self._current_file is None or isinstance(self._current_file, io.BufferedWriter):
             return
         for rec in records:
             self._current_file.write(rec.to_json() + "\n")

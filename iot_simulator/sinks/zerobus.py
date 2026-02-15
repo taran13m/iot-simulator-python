@@ -36,10 +36,10 @@ try:
     ZEROBUS_AVAILABLE = True
 except ImportError:
     ZEROBUS_AVAILABLE = False
-    ZerobusSdk = None  # type: ignore[assignment,misc]
-    RecordType = None  # type: ignore[assignment,misc]
-    StreamConfigurationOptions = None  # type: ignore[assignment,misc]
-    TableProperties = None  # type: ignore[assignment,misc]
+    ZerobusSdk = None
+    RecordType = None
+    StreamConfigurationOptions = None
+    TableProperties = None
 
 
 def _resolve_credentials(
@@ -102,7 +102,7 @@ def _resolve_credentials(
             "Provide them explicitly, via environment variables, or in ~/.databrickscfg."
         )
 
-    return resolved_host, resolved_id, resolved_secret  # type: ignore[return-value]
+    return resolved_host, resolved_id, resolved_secret
 
 
 class ZerobusSink(Sink):

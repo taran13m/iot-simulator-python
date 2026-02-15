@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+
+- **Minimum Python version raised to 3.11** (`enum.StrEnum` requires 3.11+). Removed Python 3.10 from CI matrix, `requires-python`, and classifiers.
+
+### Fixed
+
+- **Resolved all 56 mypy strict-mode errors** across 13 source files:
+  - Added mypy overrides for optional dependency modules (pyspark, aiokafka, pyarrow, deltalake, sqlalchemy, azure, boto3, httpx, zerobus, databricks) to handle missing stubs cleanly.
+  - Installed `types-PyYAML` stub package for proper YAML type checking.
+  - Added missing return-type and parameter-type annotations to all sink constructors, PySpark DataSource readers, and helper functions.
+  - Added generic type parameters to `csv.DictWriter`, `tuple`, and `dict` usages.
+  - Added `# type: ignore[misc]` for PySpark DataSource subclasses (base classes are `Any` from untyped pyspark stubs).
+  - Removed stale `# type: ignore` comments that became unused.
+  - Used `typing.cast` in sink factory to satisfy `no-any-return`.
+  - Narrowed union types in `FileSink` to eliminate `arg-type` errors.
+
 ## [0.1.0] - 2026-02-15
 
 ### Added

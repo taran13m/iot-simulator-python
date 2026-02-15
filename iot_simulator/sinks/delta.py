@@ -8,6 +8,7 @@ Requires the ``delta`` extra::
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 from iot_simulator.models import SensorRecord
 from iot_simulator.sinks.base import Sink
@@ -29,7 +30,7 @@ except ImportError:
 _ARROW_SCHEMA = None
 
 
-def _get_arrow_schema():
+def _get_arrow_schema() -> Any:
     global _ARROW_SCHEMA
     if _ARROW_SCHEMA is None:
         import pyarrow as pa
@@ -78,7 +79,7 @@ class DeltaSink(Sink):
         storage_options: dict[str, str] | None = None,
         rate_hz: float | None = None,
         batch_size: int = 1000,
-        **kwargs,
+        **kwargs: Any,
     ) -> None:
         if not DELTA_AVAILABLE:
             raise ImportError(
