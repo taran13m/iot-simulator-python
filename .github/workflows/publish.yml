@@ -163,7 +163,7 @@ jobs:
           text = open('CHANGELOG.md').read()
           pattern = rf'## \[{re.escape(sys.argv[1])}\].*?\n(.*?)(?=\n## \[|$)'
           match = re.search(pattern, text, re.DOTALL)
-          print(match.group(1).strip() if match else f'Release {sys.argv[1]}')
+          print(match.group(1).strip() if match else 'Release $VERSION')
           " "$VERSION")
           {
             echo "notes<<CHANGELOG_EOF"
